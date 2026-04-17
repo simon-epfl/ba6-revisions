@@ -27,17 +27,17 @@ Claude cannot visually parse the PDF directly — you must rasterise first. **Al
 
 ```bash
 # Both pages at readable resolution
-pdftoppm -r 200 "Usable Security & Privacy — Exam Cheat Sheet.pdf" /tmp/cshi -png
+pdftoppm -r 200 cheatsheet_compressed_1_page.pdf /tmp/cshi -png
 
 # Single page (faster)
-pdftoppm -r 200 "Usable Security & Privacy — Exam Cheat Sheet.pdf" /tmp/cshi -png -f 1 -l 1
+pdftoppm -r 200 cheatsheet_compressed_1_page.pdf /tmp/cshi -png -f 1 -l 1
 ```
 
 Then `Read` the PNG: `/tmp/cshi-1.png`, `/tmp/cshi-2.png`.
 
 ### Check page count
 ```bash
-pdfinfo "Usable Security & Privacy — Exam Cheat Sheet.pdf" | grep Pages
+pdfinfo cheatsheet_compressed_1_page.pdf | grep Pages
 ```
 **Must be exactly 2.** If it's 3+, content is overflowing — either trim or shrink the font.
 
