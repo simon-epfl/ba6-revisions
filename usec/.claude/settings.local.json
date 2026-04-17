@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(weasyprint --version)",
+      "Bash(weasyprint cheatsheet.html \"Usable Security & Privacy — Exam Cheat Sheet.pdf\")",
+      "Bash(brew install *)",
+      "Bash(brew link *)",
+      "Bash(export PATH=\"/opt/homebrew/Cellar/poppler/26.04.0/bin:$PATH\")",
+      "Bash(pdftoppm --version)",
+      "Bash(ln -sf /opt/homebrew/Cellar/poppler/26.04.0/bin/pdftoppm /opt/homebrew/bin/pdftoppm)",
+      "Bash(brew list *)",
+      "Bash(pdftotext /Users/poca/Documents/Github/ba6-revisions/usec/lectures/lecture-17ethics-security-and-privacy-1-compressed.pdf /tmp/usec_pdfs/l17-1-raw.txt)",
+      "Read(//tmp/usec_pdfs/**)",
+      "Bash(pdfinfo /Users/poca/Documents/Github/ba6-revisions/usec/lectures/lecture-17ethics-security-and-privacy-1-compressed.pdf)",
+      "Bash(pdftoppm -v)",
+      "Bash(sudo ln *)",
+      "Read(//opt/homebrew/bin/**)",
+      "Bash(pdfimages -list /Users/poca/Documents/Github/ba6-revisions/usec/lectures/lecture-17ethics-security-and-privacy-1-compressed.pdf)",
+      "Bash(/opt/homebrew/Cellar/poppler/26.04.0/bin/pdfimages -list /Users/poca/Documents/Github/ba6-revisions/usec/lectures/lecture-17ethics-security-and-privacy-1-compressed.pdf)",
+      "Bash(pdfinfo \"Usable Security & Privacy — Exam Cheat Sheet.pdf\")",
+      "Bash(pdftoppm -r 150 \"Usable Security & Privacy — Exam Cheat Sheet.pdf\" /tmp/cs -png)",
+      "Read(//private/tmp/**)",
+      "Bash(pdftoppm -r 120 \"Usable Security & Privacy — Exam Cheat Sheet.pdf\" /tmp/cs -png -f 1 -l 1)",
+      "Bash(pdftoppm *)"
+    ]
+  }
+}

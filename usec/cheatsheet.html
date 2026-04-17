@@ -6,7 +6,7 @@
 <style>
   @page { size: A4; margin: 2.5mm 3mm; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html { font-size: 3.72pt; }
+  html { font-size: 4.4pt; }
   body {
     font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
     line-height: 1.09;
@@ -16,7 +16,7 @@
   .page {
     column-count: 3;
     column-gap: 1.8mm;
-    column-fill: auto;
+    column-fill: balance;
     width: 204mm;
     height: 292mm;
     overflow: hidden;
@@ -111,7 +111,7 @@
 
 <!-- ==================== PAGE 1 ==================== -->
 <div class="page">
-<div class="ptitle">Page 1 — Authentication · Privacy · Warnings &amp; Frameworks</div>
+<div class="ptitle">Page 1 — Authentication · Privacy · Warnings · Consent &amp; Policies</div>
 
 <section>
 <h2 class="blue">Core Concepts</h2>
@@ -359,11 +359,124 @@
 <p><b>Verdict:</b> If cost is high but actual benefit is low (because the benefit is an externality), the advice is <b>not worth following</b> from the user's rational perspective. Recommend removing or replacing it.</p>
 </section>
 
+<section>
+<h2 class="blue">Password Attacks &amp; Storage</h2>
+<ul class="compact">
+  <li><b>Online guessing</b> — attacker hits the real login form; throttled by rate limits/lockouts.</li>
+  <li><b>Offline brute force</b> — attacker has the hash file (stolen DB), tries billions/sec locally.</li>
+  <li><b>Dictionary attack</b> — tries common words + leaked-password lists (RockYou, HaveIBeenPwned).</li>
+  <li><b>Credential stuffing</b> — replays <i>leaked</i> username/password pairs across other sites (exploits reuse).</li>
+  <li><b>Rainbow table</b> — precomputed hash→password lookup; defeated by <b>salting</b>.</li>
+  <li><b>Salt</b> — random per-user value mixed into hash so two identical passwords get different hashes → kills rainbow tables + forces per-user cracking.</li>
+  <li><b>Pepper</b> — secret stored separately from DB.</li>
+  <li><b>Slow hash</b> — bcrypt / scrypt / argon2 — deliberately expensive to compute → multiplies attacker cost without hurting login.</li>
+</ul>
+</section>
+
+<section>
+<h2 class="blue">2FA &amp; Passwordless</h2>
+<table>
+  <tr><th>Method</th><th>Factor</th><th>Phishing-resistant?</th></tr>
+  <tr><td><b>SMS OTP</b></td><td>have (phone)</td><td>No — SIM swap; phishable (user types code on fake site)</td></tr>
+  <tr><td><b>TOTP</b> (Authenticator app)</td><td>have</td><td>No — still phishable</td></tr>
+  <tr><td><b>Push approval</b></td><td>have</td><td>No — "MFA fatigue" prompt-bombing attack</td></tr>
+  <tr><td><b>Hardware key</b> (YubiKey)</td><td>have</td><td>Yes — bound to origin; fake site can't use it</td></tr>
+  <tr><td><b>FIDO2 / WebAuthn / Passkey</b></td><td>have + biometric</td><td>Yes — public-key crypto per site, private key never leaves device</td></tr>
+</table>
+<p class="smallnote"><b>Why passkeys matter:</b> eliminate passwords entirely; phishing-resistant by design; syncs across devices via OS keychain. Replaces "knowledge" factor with cryptographic "possession."</p>
+</section>
+
+<section>
+<h2 class="purple">Anonymity Concepts</h2>
+<ul class="compact">
+  <li><b>Anonymity</b> — cannot link data to a person at all.</li>
+  <li><b>Pseudonymity</b> — consistent identifier (handle) but not tied to real identity; can still be re-identified via behaviour.</li>
+  <li><b>Unlinkability</b> — cannot tell that two actions belong to the same person.</li>
+  <li><b>K-anonymity</b> — each record is indistinguishable from at least <i>k-1</i> others on quasi-identifiers. Weak against aggregation.</li>
+  <li><b>Differential privacy</b> — add calibrated noise so presence/absence of any single record can't be detected. Privacy budget ε: lower = more private, less utility.</li>
+  <li><b>Netflix Prize (2008)</b>: "anonymised" ratings re-identified by cross-referencing IMDB public reviews → proved anonymisation alone fails.</li>
+</ul>
+</section>
+
+<section>
+<h2 class="purple">Tracking &amp; Cookies</h2>
+<ul class="compact">
+  <li><b>First-party cookie</b> — set by the site you visit. Needed for login, cart.</li>
+  <li><b>Third-party cookie</b> — set by embedded domains (ads, analytics) → cross-site tracking. Being phased out by browsers.</li>
+  <li><b>Device fingerprinting</b> — identifies you by browser+OS+fonts+canvas+timezone combo; <i>stateless</i>, survives cookie clearing. Harder to defend against than cookies.</li>
+  <li><b>Tracking pixel</b> — 1×1 invisible image that pings a server to log email opens / page loads.</li>
+  <li><b>Do Not Track (DNT)</b> — HTTP header; largely ignored because non-binding. GPC (Global Privacy Control) is the newer, legally-backed replacement in some jurisdictions.</li>
+  <li><b>ePrivacy Directive / "Cookie Law"</b> — EU rule requiring consent <i>before</i> setting non-essential cookies. Separate from GDPR but aligned.</li>
+</ul>
+</section>
+
+<section>
+<h2 class="blue">Federated Auth (SSO)</h2>
+<ul class="compact">
+  <li><b>SSO</b> (Single Sign-On) — one login grants access to many apps. Reduces password fatigue; single point of failure.</li>
+  <li><b>OAuth 2.0</b> — delegated <i>authorization</i>: "let App X access my Google Drive." Issues access tokens; not an authentication protocol.</li>
+  <li><b>OIDC</b> (OpenID Connect) — identity layer on top of OAuth → actual <i>authentication</i> + ID token. This is "Sign in with Google."</li>
+  <li><b>SAML</b> — XML-based enterprise SSO (Okta, AD FS). Common in workplaces.</li>
+  <li><b>Risk:</b> phishing the SSO page yields access to <i>all</i> linked services. Hardware key / passkey on the IdP is critical.</li>
+</ul>
+</section>
+
+<section>
+<h2 class="purple">Informed Consent</h2>
+<p><b>Definition:</b> The person understands (1) what they are agreeing to, (2) what data is collected, (3) how it will be used, (4) what risks exist, and (5) that they can withdraw at any time — <i>before</i> agreeing.</p>
+<p><b>Key issue:</b> Burying consent in Terms &amp; Conditions that nobody reads is technically "notice" but not "informed." GDPR requires consent to be specific, plain-language, and freely given.</p>
+<p class="ex">Bad: WiFi T&amp;C says "we may monitor traffic to improve your experience" = vague, buried. Good: popup explains "we will see which websites you visit while on our WiFi" with clear accept/decline.</p>
+</section>
+
+<section>
+<h2 class="purple">Privacy Policy &amp; Trust</h2>
+<h3>Three Policy Formats</h3>
+<ul class="compact">
+  <li><b>Full policy</b> — all information on one long page. Comprehensive but nobody reads it.</li>
+  <li><b>Short structured / "nutrition label"</b> — table-like summary with yes/no answers and links to full text. Easier to scan.</li>
+  <li><b>Machine-readable</b> — policy in XML/JSON/P3P so user's software can auto-check it. Most privacy-protective but requires technical setup.</li>
+</ul>
+<h3>FTC Enforcement (USA)</h3>
+<p>If a company violates its <i>own</i> privacy policy, the FTC can fine them. <span class="ex">Google Buzz (2010): auto-enrolled Gmail users into social network, exposed frequent contacts publicly → $8.5M settlement. Snapchat: marketed "disappearing" snaps, but policy admitted they could persist.</span></p>
+<h3>Trust</h3>
+<ul class="compact">
+  <li><b>Trust barriers</b> (Riegelsberger &amp; Sasse, 2001 e-commerce study): lack of internet knowledge, lack of experience, separation in space/time. Collective trust signals (TRUSTe seal, reviews) &gt; individual promises.</li>
+  <li><b>Trust transfer:</b> positive experience with one site → user trusts similar-looking sites (even if they're scams).</li>
+</ul>
+<h3>Regulatory Evolution (EU)</h3>
+<ul class="compact">
+  <li><b>Data Protection Directive (1995)</b> — predecessor to GDPR. 7 principles: Notice, Purpose, Consent, Security, Disclosure, Access, Accountability. Problem: each member state implemented differently.</li>
+  <li><b>GDPR (2018)</b> — <i>Regulation</i>, so directly binding across EU; adds accountability, data-protection-by-design, breach notification (72h), DPO for large processors, extraterritorial reach, fines up to 4% global turnover.</li>
+  <li><b>Safe Harbor / Schrems I (2015)</b> — EU→US data-transfer framework invalidated after Snowden revelations. <b>Schrems II (2020)</b> struck down Privacy Shield. Cross-border transfers now need Standard Contractual Clauses + case-by-case assessment.</li>
+</ul>
+</section>
+
+<section>
+<h2 class="purple">Dark Patterns</h2>
+<p><b>Definition:</b> User interface design choices that <b>trick users into doing things they didn't intend</b>, or make it unreasonably hard to do things that benefit them (like opting out).</p>
+<h3>Cookie Banner Dark Patterns (asked in 2023, 2025 exams)</h3>
+<table>
+  <tr><th>Strategy</th><th>How It Works</th></tr>
+  <tr><td><b>Pre-ticked boxes</b></td><td>All tracking categories "on" by default — user must actively untick each</td></tr>
+  <tr><td><b>Hidden reject</b></td><td>"Accept All" is one big button; "Reject" requires navigating sub-menus</td></tr>
+  <tr><td><b>Confusing language</b></td><td>"Manage Preferences" instead of "Reject" — unclear action</td></tr>
+  <tr><td><b>Visual asymmetry</b></td><td>"Accept" large/bright; "Decline" small/grey</td></tr>
+  <tr><td><b>Forced action</b></td><td>Content blocked/blurred until user clicks "Accept"</td></tr>
+</table>
+<h3>Risks / Harms</h3>
+<ul class="compact">
+  <li>Erodes informed consent (users "agree" without understanding)</li>
+  <li>Financial harm (unwanted subscriptions, purchases, charges)</li>
+  <li>Undermines trust in legitimate digital services</li>
+  <li>Disproportionately harms vulnerable users (elderly, low digital literacy, children)</li>
+</ul>
+</section>
+
 </div>
 
 <!-- ==================== PAGE 2 ==================== -->
 <div class="page">
-<div class="ptitle">Page 2 — Study Design · Ethics &amp; Law · Phishing · IoT · AI · Access Control</div>
+<div class="ptitle">Page 2 — Study Design · Ethics · GDPR · Phishing · IoT · AI · Access Control</div>
 
 <section>
 <h2 class="teal">Between-Subjects vs Within-Subjects</h2>
@@ -389,6 +502,34 @@
   <li><b>Correlation</b> = two things vary together (when X increases, Y increases). Does NOT prove one causes the other. <span class="ex">Age correlates with phishing susceptibility, but age itself may not be the cause — it could be familiarity with technology.</span></li>
   <li><b>Causation</b> = X actually causes Y. Requires controlled experiments that rule out confounders.</li>
   <li><b>Pitfall:</b> Assuming causation from correlation leads to wrong interventions. <span class="ex">"Old people fall for phishing → train old people" might miss the real cause.</span></li>
+</ul>
+</section>
+
+<section>
+<h2 class="teal">Choosing a Study Method</h2>
+<h3>Four Purposes of Studying (Lecture 5)</h3>
+<ul class="compact">
+  <li><b>Assess needs</b> — what do users actually want/struggle with? <span class="ex">Interviews, diary studies.</span></li>
+  <li><b>Examine trade-offs</b> — compare design choices. <span class="ex">A/B test, lab study.</span></li>
+  <li><b>Evaluate requirements</b> — does the implemented system meet the spec? <span class="ex">Usability testing, field deployment.</span></li>
+  <li><b>Find root causes</b> — why does behaviour X happen? <span class="ex">Think-aloud, qualitative coding.</span></li>
+</ul>
+<h3>Project Lifecycle &amp; Method Fit</h3>
+<p><b>Analysis → Design → Prototype → Deploy.</b> Method must match the stage: needs/interviews early; heuristic + think-aloud on prototypes; field studies post-launch.</p>
+<h3>NN/g Research Quadrants</h3>
+<table>
+  <tr><th></th><th>Qualitative</th><th>Quantitative</th></tr>
+  <tr><td><b>Attitudinal</b> (what they say)</td><td>Interviews, focus groups</td><td>Surveys, Likert ratings</td></tr>
+  <tr><td><b>Behavioral</b> (what they do)</td><td>Think-aloud, ethnography</td><td>A/B test, clickstream logs, eye-tracking</td></tr>
+</table>
+<p class="smallnote"><b>Pick carefully:</b> self-report ≠ behaviour. Surveys measure <i>beliefs</i>; logs measure <i>actions</i>.</p>
+<h3>What a Survey Can Measure</h3>
+<ul class="compact">
+  <li><b>Attitudes</b> — opinions, preferences (Likert scales).</li>
+  <li><b>Behaviors</b> — self-reported actions ("how often do you update?").</li>
+  <li><b>Knowledge</b> — factual understanding (quiz-style).</li>
+  <li><b>Expectations</b> — what the user predicts will happen.</li>
+  <li><b>Capabilities</b> — what they can do (demonstrable).</li>
 </ul>
 </section>
 
@@ -423,6 +564,24 @@
   <li><b>Inter-rater reliability (IRR)</b> — do <i>different</i> coders independently assign the same codes to the same data? Measured by <b>Cohen's Kappa</b> (0 = random agreement, 1 = perfect agreement). Kappa &gt; 0.6 is acceptable.</li>
   <li><b>Intra-rater reliability</b> — does the <i>same</i> coder assign the same codes when re-coding data later? Tests consistency over time.</li>
 </ul>
+<h3>Descriptive vs Inferential RQs</h3>
+<ul class="compact">
+  <li><b>Descriptive</b> — summarise a population. <span class="ex">"What % of students use 2FA?" → percentages, means.</span></li>
+  <li><b>Inferential / causal</b> — test a relationship. <span class="ex">"Does warning design X reduce clicks?" → needs hypothesis test (t-test, ANOVA, chi-squared, regression). Specific test names are NOT examined.</span></li>
+</ul>
+<h3>Data Types (drives statistics choice)</h3>
+<ul class="compact">
+  <li><b>Numeric:</b> continuous (time), discrete (count), interval (ratings).</li>
+  <li><b>Categorical:</b> binary (yes/no), ordinal (ranked: low/med/high), nominal (unordered: browser name).</li>
+</ul>
+<h3>Validated Instruments</h3>
+<ul class="compact">
+  <li><b>SUS</b> (System Usability Scale) — 10-item Likert, 0-100 score. &gt;68 = above average.</li>
+  <li><b>SeBIS</b> (Security Behavior Intentions Scale) — measures self-reported security habits.</li>
+  <li><b>NASA-TLX</b> — cognitive workload rating.</li>
+</ul>
+<h3>Question Design Trade-off</h3>
+<p><b>Open-ended</b> = easy to write, hard to analyse (coding needed). <b>Closed-ended</b> = hard to write (biases lurk), easy to analyse. Provide balanced response anchors; avoid double-barrelled &amp; leading questions.</p>
 </section>
 
 <section>
@@ -465,6 +624,25 @@
 <p>1) <b>Identify stakeholders</b> — everyone affected (participants, platform users, researchers, public). 2) <b>Assess impacts</b> — tangible harms (financial, psychological) + rights violations (consent, privacy). 3) <b>Document mitigations</b> — what you do to reduce each harm. 4) <b>Justify decision</b> — do benefits outweigh remaining risks?</p>
 <h3>At-Risk Users</h3>
 <p><b>Definition:</b> People facing (1) elevated likelihood of being attacked, (2) factors that make attacks worse, (3) heightened harm from attacks. <span class="ex">Intimate partner violence survivors (abuser has physical access to devices), political activists (state-level adversary), journalists (targeted surveillance), LGBTQ+ individuals in hostile regions.</span></p>
+<p><b>Journalists</b> (McGregor et al.): high privacy need, low tech expertise, focus on protecting <i>sources</i> not themselves, rely on 3rd-party tools, face highly-capable adversaries. <b>Hackers vs internal testers</b> (Votipka et al.): four differentiators — vuln-discovery experience, system knowledge, access to dev process, motivation — which is why BBPs surface bugs internal QA misses.</p>
+<h3>Agrafiotis Cyber-Harms Taxonomy</h3>
+<ul class="compact">
+  <li><b>Physical / Digital</b> — injury, device damage, data loss.</li>
+  <li><b>Economic</b> — theft, fraud, lost revenue, regulatory fines.</li>
+  <li><b>Psychological</b> — anxiety, shame, PTSD, loss of confidence.</li>
+  <li><b>Reputational</b> — damaged public image, lost relationships.</li>
+  <li><b>Social / Societal</b> — erosion of trust, cultural harm, disruption of services.</li>
+</ul>
+<h3>6 Ethics Dimensions in S&amp;P Research</h3>
+<ul class="compact">
+  <li><b>Vulnerability disclosure</b> — full vs responsible.</li>
+  <li><b>Experiments on live systems w/o consent</b> — e.g. crawling real users.</li>
+  <li><b>Deception</b> — needed but requires debriefing.</li>
+  <li><b>Dual-use innovations</b> — tool built for defence can be weaponised.</li>
+  <li><b>Team-member wellbeing</b> — exposure to harmful content (CSAM, extremism).</li>
+  <li><b>Power dynamics</b> — PhD/supervisor pressures around risky methods.</li>
+</ul>
+<p class="smallnote"><b>Risk assessment = Likelihood × Impact severity.</b> Use when Menlo harms/benefits aren't directly comparable.</p>
 </section>
 
 <section>
@@ -495,54 +673,23 @@
 </section>
 
 <section>
-<h2 class="red">Dark Patterns</h2>
-<p><b>Definition:</b> User interface design choices that <b>trick users into doing things they didn't intend</b>, or make it unreasonably hard to do things that benefit them (like opting out).</p>
-<h3>Cookie Banner Dark Patterns (asked in 2023, 2025 exams)</h3>
-<table>
-  <tr><th>Strategy</th><th>How It Works</th></tr>
-  <tr><td><b>Pre-ticked boxes</b></td><td>All tracking categories are "on" by default — user must actively untick each one</td></tr>
-  <tr><td><b>Hidden reject</b></td><td>"Accept All" is one big button; "Reject" requires navigating through 3 sub-menus</td></tr>
-  <tr><td><b>Confusing language</b></td><td>Buttons say "Manage Preferences" instead of "Reject" — unclear what action does</td></tr>
-  <tr><td><b>Visual asymmetry</b></td><td>"Accept" is large, bright, colorful; "Decline" is small, grey, barely visible</td></tr>
-  <tr><td><b>Forced action</b></td><td>Website content is blocked/blurred until user clicks "Accept"</td></tr>
-</table>
-<h3>Risks / Harms of Dark Patterns</h3>
-<ul class="compact">
-  <li>Erodes informed consent (users "agree" without understanding)</li>
-  <li>Financial harm (unwanted subscriptions, purchases, charges)</li>
-  <li>Undermines trust in legitimate digital services</li>
-  <li>Disproportionately harms vulnerable users (elderly, low digital literacy, children)</li>
-</ul>
-</section>
-
-<section>
-<h2 class="red">Informed Consent</h2>
-<p><b>Definition:</b> The person understands (1) what they are agreeing to, (2) what data is collected, (3) how it will be used, (4) what risks exist, and (5) that they can withdraw at any time — <i>before</i> agreeing.</p>
-<p><b>Key issue:</b> Burying consent in Terms &amp; Conditions that nobody reads is technically "notice" but not "informed." GDPR requires consent to be specific, plain-language, and freely given.</p>
-<p class="ex">Bad: WiFi T&amp;C says "we may monitor traffic to improve your experience" = vague, buried. Good: popup explains "we will see which websites you visit while on our WiFi" with clear accept/decline.</p>
-</section>
-
-<section>
-<h2 class="red">Privacy Policy &amp; Trust</h2>
-<h3>Three Policy Formats</h3>
-<ul class="compact">
-  <li><b>Full policy</b> — all information on one long page. Comprehensive but nobody reads it.</li>
-  <li><b>Short structured / "nutrition label"</b> — table-like summary with yes/no answers and links to full text. Easier to scan.</li>
-  <li><b>Machine-readable</b> — policy in XML/JSON/P3P so user's software can auto-check it. Most privacy-protective but requires technical setup.</li>
-</ul>
-<h3>FTC Enforcement (USA)</h3>
-<p>If a company violates its <i>own</i> privacy policy, the FTC can fine them. <span class="ex">Google Buzz (2010): auto-enrolled Gmail users into social network, exposed frequent contacts publicly → $8.5M settlement. Snapchat: marketed "disappearing" snaps, but policy admitted they could persist.</span></p>
-<h3>Trust</h3>
-<ul class="compact">
-  <li><b>Trust barriers</b> (Riegelsberger &amp; Sasse): lack of internet knowledge, lack of experience, separation in space/time</li>
-  <li><b>Trust transfer:</b> positive experience with one site → user trusts similar-looking sites (even if they're scams)</li>
-</ul>
-</section>
-
-<section>
 <h2 class="orange">Phishing &amp; Online Fraud</h2>
 <h3>Phishing Ecosystem</h3>
 <p><b>Phisher</b> sends fake emails → <b>Email server</b> filters some (blacklists, spam filters) → <b>User</b> receives the rest: either clicks (becomes victim) or reports → <b>Help desk / IT</b> blocks the URL and updates filters → feeds back to protect <b>more potential victims</b>. Changes to one part affect the whole system.</p>
+<h3>5 Common Elements in Phishing Emails</h3>
+<ul class="compact">
+  <li><b>Automated</b> — sent in bulk, not crafted individually.</li>
+  <li><b>Impersonation</b> — spoofs a trusted sender (bank, IT, boss).</li>
+  <li><b>Direction to a website</b> — link to a credential-harvesting page.</li>
+  <li><b>Attachment</b> — malicious file (Office macro, PDF exploit).</li>
+  <li><b>Auth info requested</b> — asks for password, OTP, card details.</li>
+</ul>
+<p class="smallnote"><b>Spear phishing</b> = targeted at one person (uses their name, role, context). <b>Whaling</b> = spear phishing of execs.</p>
+<h3>Active vs Passive Warnings</h3>
+<ul class="compact">
+  <li><b>Active</b> — full-page interstitial that blocks action until user decides. <span class="ex">Chrome red "Deceptive site ahead" page.</span> Effective but intrusive → habituation risk.</li>
+  <li><b>Passive</b> — ambient indicator (lock icon, URL colouring). Cheap but widely ignored; Akhawe &amp; Felt showed familiarity with referring site dramatically raises click-through.</li>
+</ul>
 <h3>Four Categories of Countermeasures</h3>
 <ul>
   <li><b>1. Automated blocking</b> — spam filters, URL blacklists (Google Safe Browsing), email authentication (DMARC). Works at scale but always behind new phishing sites.</li>
@@ -671,6 +818,33 @@
   <li><b>Snapchat</b>: Marketed "disappearing" messages, but privacy policy admitted snaps could be recovered. FTC action for deceptive practices.</li>
   <li><b>Hypocrite commits</b> (2021): Researchers submitted malicious code to Linux kernel to test if maintainers caught it. Violated beneficence (harmed the project) and respect for persons (maintainers didn't consent).</li>
   <li><b>Expert vs non-expert gap</b> (Munyendo et al.): Experts prioritize updates + password managers + 2FA. Non-experts rely on antivirus. Paradoxically, more experts click unknown links (because they can assess risk). Non-experts overestimate antivirus effectiveness.</li>
+  <li><b>Ashley Madison breach (2015):</b> infidelity-site database leaked; highlighted <i>sensitivity</i> of metadata + that "anonymous" accounts are de-anonymisable. Triggered suicides → real-world harm from breach.</li>
+  <li><b>Target pregnancy prediction</b> (Duhigg, 2012): shopping patterns inferred pregnancy before family knew → <b>aggregation</b> harm (Solove).</li>
+</ul>
+</section>
+
+<section>
+<h2 class="slate">Human-Factor Concepts &amp; Biases</h2>
+<ul class="compact">
+  <li><b>Privacy paradox</b> — users say they care about privacy but behave otherwise (accept cookies, overshare). Explained by: short-term convenience &gt; abstract long-term risk; no visible consequence; lack of alternatives.</li>
+  <li><b>Security fatigue</b> — decision overload from constant prompts/rules → users disengage, pick the quickest option, reuse passwords.</li>
+  <li><b>Mental models</b> — user's internal picture of how a system works. Often wrong (e.g. thinking "incognito" hides you from the ISP) → bad decisions. Fix by aligning UI metaphors with reality.</li>
+  <li><b>Optimism bias</b> — "it won't happen to me" → users underestimate personal risk and skip protections.</li>
+  <li><b>Habituation</b> — repeated identical warnings lose effect (root of cookie-banner clickthrough). Counter with <i>polymorphic warnings</i> (visual variance) + context-aware triggering.</li>
+  <li><b>Compliance budget</b> (Beautement &amp; Sasse) — each user has limited willingness to follow security rules; every extra burden (password rotation, MFA prompts) depletes the budget until bypass begins.</li>
+  <li><b>Usability–security trade-off myth</b> — not zero-sum; bad usability <i>hurts</i> security (workarounds, shadow IT, weak passwords). Good design is positive-sum (PbD principle 4).</li>
+</ul>
+</section>
+
+<section>
+<h2 class="slate">Exam Answer Heuristics</h2>
+<ul class="compact">
+  <li><b>"Evaluate with Bonneau"</b> → pick 2-3 usability + 2-3 security properties; score each with evidence; don't enumerate all 25.</li>
+  <li><b>"Apply HitL to warning X"</b> → name stage + failure type + scenario-specific example (not generic).</li>
+  <li><b>"Design a study"</b> → RQ, method + justification, participants (N + recruitment), tasks, IV/DV, limitations. Always name one limitation.</li>
+  <li><b>"Identify ethics violations"</b> → map to Menlo principle + what harm + who is affected + mitigation.</li>
+  <li><b>"Privacy analysis"</b> → pick a framework (Solove taxonomy OR Contextual Integrity OR PbD) and apply systematically — don't mix all three superficially.</li>
+  <li><b>Always distinguish:</b> authentication ≠ authorization; correlation ≠ causation; notice ≠ informed consent; encryption ≠ anonymity; lock icon ≠ site is safe.</li>
 </ul>
 </section>
 
