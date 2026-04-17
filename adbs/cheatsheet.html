@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ADBS Cheat Sheet 2026</title>
+<style>
+  @page { size: A4; margin: 4mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 6.2px; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; color: #1a1a1a; line-height: 1.22; }
+
+  .page { width: 210mm; min-height: 297mm; padding: 3mm; column-count: 4; column-gap: 3mm; page-break-after: always; }
+
+  h1 { font-size: 1.5em; text-align: center; margin-bottom: 2px; color: #0d47a1; border-bottom: 1px solid #0d47a1; }
+  h2 { font-size: 1.05em; color: #fff; background: #1565c0; padding: 1px 3px; margin: 2px 0 1px 0; border-radius: 2px; break-after: avoid; }
+  h3 { font-size: 0.95em; color: #1565c0; margin: 1.5px 0 0.5px 0; border-bottom: 0.5px solid #90caf9; break-after: avoid; }
+
+  section { break-inside: avoid; margin-bottom: 1.5px; }
+  p, li, td, th { font-size: 1em; }
+  ul { padding-left: 8px; margin: 0; }
+  li { margin-bottom: 0.3px; }
+
+  table { width: 100%; border-collapse: collapse; margin: 1px 0; font-size: 0.95em; }
+  th, td { border: 0.4px solid #90caf9; padding: 0.5px 1.5px; text-align: left; }
+  th { background: #e3f2fd; font-weight: 600; }
+
+  .formula { background: #fff9c4; padding: 1px 2px; border-radius: 1px; font-family: 'Courier New', monospace; font-size: 0.95em; display: block; margin: 1px 0; }
+  .key { font-weight: 700; color: #b71c1c; }
+  .hl { background: #e8f5e9; padding: 0 1px; border-radius: 1px; }
+  code { font-family: 'Courier New', monospace; font-size: 0.95em; background: #f5f5f5; padding: 0 1px; }
+
+  .small { font-size: 0.9em; }
+</style>
+</head>
+<body>
+
+<!-- ==================== PAGE 1 (FRONT) ==================== -->
+<div class="page">
+<h1>ADBS Cheat Sheet — Spring 2026</h1>
+
+<!-- SQL & RA -->
+<section>
+<h2>1. SQL &amp; Relational Algebra</h2>
+<h3>SQL Evaluation Order</h3>
+<p>FROM → WHERE → GROUP BY → HAVING → SELECT → DISTINCT → ORDER BY → LIMIT</p>
+<h3>RA Operators</h3>
+<ul>
+  <li><b>σ</b> Selection (rows), <b>π</b> Projection (cols), <b>ρ</b> Rename</li>
+  <li><b>∪</b> Union, <b>–</b> Difference, <b>×</b> Cross Product</li>
+  <li><b>∩</b> Intersection = R – (R – S)</li>
+  <li><b>⋈</b> Join = σ<sub>θ</sub>(R × S); Natural join projects away dups</li>
+  <li>Theta join ⊃ Equi-join ⊃ Natural join</li>
+</ul>
+<h3>Codd's Theorem</h3>
+<p>Relational Calculus = Relational Algebra in expressiveness.</p>
+</section>
+
+<!-- DBMS Architecture -->
+<section>
+<h2>2. DBMS Architecture</h2>
+<p>Layers (bottom→top): Disk Space Mgmt → Buffer Mgmt → Files &amp; Index Mgmt → Operator Execution → Query Planning. Cross-cutting: Recovery, Concurrency Control.</p>
+</section>
+
+<!-- Storage -->
+<section>
+<h2>3. Storage &amp; Disk</h2>
+<h3>Storage Hierarchy</h3>
+<p>CPU Reg(&lt;1ns) → Cache(&lt;10ns) → DRAM(100ns) → SSD(0.1ms) → HDD(10ms) → Network(30ms)</p>
+<h3>Disk Access Time</h3>
+<p class="formula">Time = Seek + Rotational delay + Transfer</p>
+<p>Sequential I/O ≫ Random I/O (100× on HDD). SSD: random reads ~500MB/s, seq ~525MB/s; random writes ~120MB/s.</p>
+<h3>Page = Block = unit of I/O</h3>
+<p>Typical 4–64KB. Disk space mgr: maps page IDs → physical locations.</p>
+</section>
+
+<!-- Buffer Management -->
+<section>
+<h2>4. Buffer Management</h2>
+<p>Buffer pool = in-memory cache of pages. Each frame: PageId, Dirty flag, Pin count.</p>
+<h3>Pin/Unpin</h3>
+<p><code>pin(pageno)</code>: if in pool, pinCount++; else evict victim (if dirty→write back), read page. <code>unpin(pageno, dirty)</code>: pinCount--, set dirty.</p>
+<h3>Replacement Policies</h3>
+<ul>
+  <li><b>LRU</b>: evict least recently unpinned. Good for random access, bad for sequential flooding (scan with N+1 pages → all misses).</li>
+  <li><b>Clock</b>: approx LRU. Circular buffer + ref bit. Skip pinned; if ref=1→clear; if ref=0→evict.</li>
+  <li><b>MRU</b>: evict most recently used. Better for repeated scans.</li>
+</ul>
+</section>
+
+<!-- Files, Pages, Records -->
+<section>
+<h2>5. Files, Pages, Records</h2>
+<h3>File Organisations</h3>
+<ul>
+  <li><b>Heap</b>: unordered. Linked list or page directory.</li>
+  <li><b>Sorted</b>: sorted by key. Binary search: log₂P.</li>
+  <li><b>Index</b>: B+ tree, hash.</li>
+</ul>
+<h3>Page Layout</h3>
+<ul>
+  <li>Fixed-length packed: RID = (pageId, position). Delete → move last record (changes RID).</li>
+  <li>Fixed-length unpacked (bitmap): gaps OK, bitmap tracks free slots.</li>
+  <li><b>Slotted pages</b>: slot directory → offsets. Supports variable-length. RID = (pageId, slotId). Records stored from end. Delete → set slot to -1.</li>
+</ul>
+<h3>Record Layout</h3>
+<p>Fixed: direct field access via arithmetic. Variable: array of (offset, length) pairs; NULL bitmap.</p>
+</section>
+
+<!-- Storage Models -->
+<section>
+<h2>6. Storage Models &amp; Compression</h2>
+<h3>OLTP vs OLAP</h3>
+<p>OLTP: short queries, high concurrency, read-write. OLAP: complex aggregations, read-heavy.</p>
+<h3>Storage Models</h3>
+<table>
+  <tr><th>Model</th><th>Good for</th><th>Layout</th></tr>
+  <tr><td>Row (NSM)</td><td>OLTP</td><td>All attrs contiguous</td></tr>
+  <tr><td>Column (DSM)</td><td>OLAP</td><td>Single attr contiguous</td></tr>
+  <tr><td>PAX (Hybrid)</td><td>OLAP+</td><td>Row groups → column chunks</td></tr>
+</table>
+<h3>Compression (Columnar)</h3>
+<ul>
+  <li><b>RLE</b>: suppress duplicates (good for sorted categorical)</li>
+  <li><b>Delta</b>: encode differences (good for sorted numerics)</li>
+  <li><b>Bit packing</b>: fewer bits for small ints</li>
+  <li><b>Dictionary</b>: replace frequent values with codes (most common)</li>
+</ul>
+</section>
+
+<!-- File Organisation Costs -->
+<section>
+<h2>7. File Organisation Costs</h2>
+<p class="small">P = #pages, R = recs/page, D = avg I/O time</p>
+<table>
+  <tr><th>Op</th><th>Heap</th><th>Sorted</th></tr>
+  <tr><td>Scan</td><td>P·D</td><td>P·D</td></tr>
+  <tr><td>Search key</td><td>0.5P·D</td><td>log₂P·D</td></tr>
+  <tr><td>Search non-key</td><td>P·D</td><td>(log₂P + match)·D</td></tr>
+  <tr><td>Insert</td><td>2D</td><td>(log₂P + P)·D</td></tr>
+  <tr><td>Delete</td><td>(0.5P+1)·D</td><td>(log₂P + P)·D</td></tr>
+</table>
+</section>
+
+<!-- Indexes -->
+<section>
+<h2>8. Indexes</h2>
+<h3>Index Entries (k*)</h3>
+<p>A: record stored in index (at most 1 per table). B: &lt;k, rid&gt;. C: &lt;k, [rid list]&gt;.</p>
+<h3>Clustered vs Unclustered</h3>
+<p>Clustered: data records ≈ same order as index. At most 1 clustered index/table. <b>Clustered I/O = #matching pages</b>. <b>Unclustered I/O ≈ #matching records</b>.</p>
+
+<h3>ISAM</h3>
+<p>Static tree. Overflow chains on insert. No locking on non-leaf. Good for static data. Search: log<sub>F</sub>(N). F≫2 so much better than binary search.</p>
+
+<h3>B+ Tree</h3>
+<ul>
+  <li>Always balanced, dynamic. Each node d ≤ entries ≤ 2d (except root).</li>
+  <li>Typical order ~100, fill factor ~67%, fanout F≈133.</li>
+  <li>Height 3 → ~2.4M records, height 4 → ~313M records.</li>
+  <li><b>Insert</b>: find leaf; if full, split (copy up middle key for leaf, push up for inner). May propagate to root.</li>
+  <li><b>Delete</b>: remove entry; if underflow, redistribute or merge. In practice, just leave space.</li>
+  <li>Optimisations: prefix compression, suffix truncation.</li>
+</ul>
+
+<h3>Hash Index</h3>
+<ul>
+  <li><b>Equality only</b> (no range). h(k) → bucket.</li>
+  <li>Static chaining: overflow chains degrade perf.</li>
+  <li><b>Extendible hashing</b>: directory of pointers. Global depth n, local depth d. Split bucket on overflow; double directory if local=global.</li>
+</ul>
+</section>
+
+<!-- External Sorting -->
+<section>
+<h2>9. External Sorting</h2>
+<p>N pages, B buffer pages.</p>
+<p class="formula">Pass 0: ⌈N/B⌉ sorted runs of B pages</p>
+<p class="formula">Passes 1+: merge B-1 runs at a time</p>
+<p class="formula"># passes = 1 + ⌈log<sub>B-1</sub>(⌈N/B⌉)⌉</p>
+<p class="formula">Total I/O = 2N × (# passes)</p>
+<p>Sorting via clustered B+ tree: always better. Unclustered: almost always worse (1 I/O per record).</p>
+</section>
+
+<!-- External Hashing -->
+<section>
+<h2>10. External Hashing &amp; Aggregation</h2>
+<p><b>Phase 1 (Partition)</b>: hash h<sub>p</sub> into B-1 partitions. <b>Phase 2 (Rehash)</b>: build in-memory hash table per partition with h<sub>r</sub> ≠ h<sub>p</sub>.</p>
+<p>Max table size: B·(B-1). Need B > √(f·N).</p>
+<p>Hashing preferred for DISTINCT/GROUP BY (scales with #distinct values). Sort preferred if output needs ordering.</p>
+</section>
+
+<!-- Joins -->
+<section>
+<h2>11. Join Algorithms</h2>
+<p class="small">R: M pages, m tuples. S: N pages, n tuples.</p>
+<table>
+  <tr><th>Algorithm</th><th>I/O Cost</th></tr>
+  <tr><td>Simple NLJ</td><td>M + m·N</td></tr>
+  <tr><td>Page NLJ</td><td>M + M·N</td></tr>
+  <tr><td>Block NLJ (B bufs)</td><td>M + ⌈M/(B-2)⌉·N</td></tr>
+  <tr><td>Index NLJ</td><td>M + m·(lookup cost)</td></tr>
+  <tr><td>Sort-Merge</td><td>sort(R) + sort(S) + M+N</td></tr>
+  <tr><td>Grace Hash</td><td>3(M+N)</td></tr>
+  <tr><td>One fits in memory</td><td>M+N (optimal)</td></tr>
+</table>
+<ul>
+  <li>NLJ: use smaller table as outer, exploit blocks. Works for any join condition.</li>
+  <li>Sort-Merge: equi-join, good if pre-sorted or output needs sort. Refinement: combine last sort pass with merge.</li>
+  <li>Hash: equi-join. Partition then build/probe. Recursive partition if needed.</li>
+</ul>
+</section>
+
+<!-- Processing Models -->
+<section>
+<h2>12. Processing Models</h2>
+<table>
+  <tr><th>Model</th><th>Direction</th><th>Emits</th><th>Target</th></tr>
+  <tr><td>Iterator/Volcano</td><td>Top-down</td><td>1 tuple</td><td>General</td></tr>
+  <tr><td>Vectorised</td><td>Top-down</td><td>Batch</td><td>OLAP</td></tr>
+  <tr><td>Materialisation</td><td>Bottom-up</td><td>All</td><td>OLTP</td></tr>
+</table>
+<p>Iterator: open/next/close. Pipelining (streaming). Blocking ops: sort, hash join, group-by.</p>
+</section>
+
+<!-- Query Optimisation -->
+<section>
+<h2>13. Query Optimisation</h2>
+<h3>Pipeline: SQL → Parser → Rewriter → Optimiser → Executor</h3>
+<h3>Plan Space</h3>
+<ul>
+  <li>RA equivalences: σ cascade/commute, π cascade, × assoc/commut, ⋈ assoc/commut (beware cross-products).</li>
+  <li><b>Heuristics</b>: push selections down, push projections down, avoid cross-products, break complex predicates.</li>
+  <li>Physical choices: heap scan vs index scan; NLJ vs SMJ vs HJ.</li>
+</ul>
+<h3>Access Methods</h3>
+<ul>
+  <li><b>Sequential scan</b>: I/O = N pages.</li>
+  <li><b>Index scan</b>: composite key (A₁,…,Aₙ) matches m equality + ≤1 range on A<sub>m+1</sub>.</li>
+  <li><b>Index-only scan</b>: answer from index alone (no data pages).</li>
+  <li><b>Multi-index/Bitmap scan</b>: intersect/union RID sets from multiple indexes.</li>
+</ul>
+</section>
+
+<!-- Cost Estimation -->
+<section>
+<h2>14. Cost Estimation &amp; Selectivity</h2>
+<p>Selectivity = |output|/|input|, always in [0,1].</p>
+<h3>Selectivity Formulas</h3>
+<table>
+  <tr><th>Predicate</th><th>sel()</th></tr>
+  <tr><td>A = c</td><td>1/NKeys(A)</td></tr>
+  <tr><td>A > a (int)</td><td>(High-a)/(High-Low+1)</td></tr>
+  <tr><td>A = B</td><td>1/max{NKeys(A),NKeys(B)}</td></tr>
+  <tr><td>NOT P</td><td>1 - sel(P)</td></tr>
+  <tr><td>P₁ ∧ P₂</td><td>sel(P₁)·sel(P₂)</td></tr>
+  <tr><td>P₁ ∨ P₂</td><td>sel(P₁)+sel(P₂)-sel(P₁∧P₂)</td></tr>
+</table>
+<h3>Join Size</h3>
+<p class="formula">|R ⋈ S| ≈ |R|·|S| / max{NKeys(R.A), NKeys(S.A)}</p>
+<p>Key-FK join: |R ⋈ S| = |S| (if FK non-null).</p>
+<h3>Histograms</h3>
+<p>Equi-width: fixed bucket width. Equi-depth: fixed #tuples/bucket (better for skew).</p>
+</section>
+
+<!-- Search Strategy -->
+<section>
+<h2>15. Search Strategy (System R)</h2>
+<ul>
+  <li><b>Left-deep trees only</b>: inner always base relation → enables pipelining &amp; index NLJ.</li>
+  <li><b>Dynamic programming</b>: Pass k builds best k-relation plans from (k-1)-relation plans + 1 relation.</li>
+  <li>Eliminate cross-products; retain cheapest plan + cheapest per <b>interesting order</b> (ORDER BY, GROUP BY, future join keys).</li>
+</ul>
+</section>
+
+</div>
+
+<!-- ==================== PAGE 2 (BACK) ==================== -->
+<div class="page">
+<h1>ADBS Cheat Sheet — Page 2</h1>
+
+<!-- Transactions -->
+<section>
+<h2>16. Transactions &amp; ACID</h2>
+<ul>
+  <li><b>Atomicity</b>: all or nothing (logging / shadow paging).</li>
+  <li><b>Consistency</b>: app responsibility; DB integrity constraints.</li>
+  <li><b>Isolation</b>: concurrent txns appear serial (CC protocols).</li>
+  <li><b>Durability</b>: committed changes survive crashes (WAL).</li>
+</ul>
+<h3>Formal Model</h3>
+<p>Txn T = ⟨R(A), W(A), …⟩. Schedule S = interleaving of all txn operations preserving per-txn order.</p>
+<h3>Conflict Types</h3>
+<table>
+  <tr><th>Type</th><th>Conflict</th><th>Problem</th></tr>
+  <tr><td>R-W</td><td>Read then another writes</td><td>Unrepeatable read</td></tr>
+  <tr><td>W-R</td><td>Write then another reads</td><td>Dirty read</td></tr>
+  <tr><td>W-W</td><td>Both write same obj</td><td>Lost update</td></tr>
+</table>
+</section>
+
+<!-- Serializability -->
+<section>
+<h2>17. Serializability</h2>
+<h3>Conflict Serializability</h3>
+<p>S is <b>conflict serializable</b> iff S can be transformed into a serial schedule by swapping consecutive non-conflicting ops.</p>
+<p><b>Dependency (Precedence) Graph</b>: node per txn, edge T<sub>i</sub>→T<sub>j</sub> if conflicting ops and T<sub>i</sub>'s op is first. <span class="key">Conflict serializable ⟺ acyclic graph.</span> Topological sort gives equivalent serial order.</p>
+<h3>View Serializability</h3>
+<p>Weaker: same initial reads, same read-from, same final writes. Allows "blind writes". NP-hard to check. No DBMS uses it.</p>
+<p>Serial ⊂ Conflict Serializable ⊂ View Serializable ⊂ All Schedules.</p>
+</section>
+
+<!-- Locking -->
+<section>
+<h2>18. Locking &amp; 2PL</h2>
+<h3>Lock Types</h3>
+<table>
+  <tr><th></th><th>S-Lock</th><th>X-Lock</th></tr>
+  <tr><td>S-Lock</td><td>✓</td><td>✗</td></tr>
+  <tr><td>X-Lock</td><td>✗</td><td>✗</td></tr>
+</table>
+<h3>Two-Phase Locking (2PL)</h3>
+<p><b>Growing phase</b>: acquire locks. <b>Shrinking phase</b>: release locks. Cannot acquire after first release. <span class="key">2PL guarantees conflict serializability.</span></p>
+<h3>Strict 2PL</h3>
+<p>Hold ALL locks until txn commits/aborts. Prevents cascading aborts &amp; dirty reads. Most common in practice.</p>
+<h3>Deadlocks</h3>
+<ul>
+  <li><b>Detection</b>: waits-for graph; cycle = deadlock. Abort a "victim" to break cycle.</li>
+  <li><b>Prevention</b>: priorities by timestamp (older = higher).
+    <br/><b>Wait-Die</b>: old waits for young; young aborts.
+    <br/><b>Wound-Wait</b>: old preempts young; young waits for old.</li>
+  <li>Restarted txn keeps original timestamp (prevents starvation).</li>
+</ul>
+</section>
+
+<!-- Recovery -->
+<section>
+<h2>19. Recovery</h2>
+<h3>Buffer Pool Policies</h3>
+<table>
+  <tr><th></th><th>STEAL</th><th>NO-STEAL</th></tr>
+  <tr><td>FORCE</td><td>—</td><td>No undo, No redo (simplest)</td></tr>
+  <tr><td>NO-FORCE</td><td class="hl">Undo + Redo (fastest runtime)</td><td>—</td></tr>
+</table>
+<p>Almost all DBMS: <b>STEAL + NO-FORCE</b> (best runtime perf, requires undo+redo).</p>
+<h3>Write-Ahead Logging (WAL)</h3>
+<ul>
+  <li>Log record: <code>&lt;TxnId, Object, OldVal, NewVal&gt;</code></li>
+  <li><b>Rule 1</b>: all log records for a page flushed to disk <i>before</i> the page is written to disk (supports UNDO → atomicity).</li>
+  <li><b>Rule 2</b>: all log records flushed before txn commit returns (supports REDO → durability).</li>
+</ul>
+<h3>ARIES Recovery (3 phases)</h3>
+<ol>
+  <li><b>Analysis</b>: scan WAL from last checkpoint → identify dirty pages &amp; active txns at crash.</li>
+  <li><b>Redo</b>: replay ALL actions from appropriate log point (repeat history).</li>
+  <li><b>Undo</b>: reverse uncommitted txns.</li>
+</ol>
+</section>
+
+<!-- Distributed Transactions -->
+<section>
+<h2>20. Distributed Transactions</h2>
+<h3>Distributed Locking</h3>
+<p>Lock tables partitioned with data. Global deadlock: union waits-for graphs periodically at designated node.</p>
+<h3>Two-Phase Commit (2PC)</h3>
+<p><b>Phase 1 (Vote)</b>: Coordinator sends PREPARE. Participants log PREPARE*, vote Yes/No. Must be unanimous.</p>
+<p><b>Phase 2 (Commit)</b>: Coordinator logs COMMIT*, broadcasts. Participants log COMMIT*, send ACK. Coordinator logs END.</p>
+<p>* = flush log before sending next message.</p>
+<h3>Recovery with 2PC</h3>
+<table class="small">
+  <tr><th>Node</th><th>Log state</th><th>Action</th></tr>
+  <tr><td>Coord</td><td>commit+end</td><td>Nothing</td></tr>
+  <tr><td>Coord</td><td>commit only</td><td>Rerun phase 2</td></tr>
+  <tr><td>Coord</td><td>abort/nothing</td><td>Presumed abort</td></tr>
+  <tr><td>Part.</td><td>prepare+commit</td><td>Send ACK</td></tr>
+  <tr><td>Part.</td><td>prepare only</td><td>Inquire coordinator</td></tr>
+  <tr><td>Part.</td><td>abort/nothing</td><td>Presumed abort</td></tr>
+</table>
+<p>2PC is unavailable during any single failure (blocking). Paxos Commit addresses this.</p>
+</section>
+
+<!-- Conjunctive Queries -->
+<section>
+<h2>21. Conjunctive Queries (CQs)</h2>
+<p>CQ = {σ,π,⋈}-fragment of RA = ∃,∧ fragment of relational calculus = simple SELECT-FROM-WHERE (AND + equality only).</p>
+<p>Rule form: Q(x) :- R₁(v₁), …, R<sub>m</sub>(v<sub>m</sub>)</p>
+<h3>Semantics</h3>
+<p>A <b>match/homomorphism</b> h maps query vars → DB values (identity on constants), s.t. h(body) ⊆ D. Answer = {(h(x₁),…,h(x<sub>k</sub>)) | h is a match}.</p>
+<h3>Complexity</h3>
+<table>
+  <tr><th>Problem</th><th>Complexity</th></tr>
+  <tr><td>CQ-Evaluation (combined)</td><td class="key">NP-complete</td></tr>
+  <tr><td>CQ-Evaluation (data)</td><td>PTIME (||D||<sup>O(||Q||)</sup>)</td></tr>
+  <tr><td>CQ-Satisfiability</td><td>Trivial (always yes via canonical DB)</td></tr>
+  <tr><td>CQ-Containment</td><td>NP-complete</td></tr>
+  <tr><td>CQ-Equivalence</td><td>NP-complete</td></tr>
+</table>
+<h3>Homomorphism Theorem</h3>
+<p>Q₁ ⊆ Q₂ ⟺ ∃ query homomorphism from Q₂ to Q₁.</p>
+<h3>Minimisation</h3>
+<p>Remove redundant atoms: if ∃ query hom from Q :- body to Q :- body∖{α}, remove α. Result is unique (up to renaming) = <b>core</b>.</p>
+</section>
+
+<!-- Acyclic CQs -->
+<section>
+<h2>22. Acyclic CQs &amp; Fast Evaluation</h2>
+<h3>Hypergraph of CQ</h3>
+<p>Nodes = variables, hyperedges = sets of variables in each atom.</p>
+<h3>Acyclicity</h3>
+<p>Hypergraph is <b>acyclic</b> iff it has a <b>join tree</b>: tree T with labels L(n) = hyperedge, s.t. for each variable v, nodes containing v form connected subtree.</p>
+<h3>GYO Reduction</h3>
+<ol>
+  <li>Eliminate nodes in ≤1 hyperedge.</li>
+  <li>Eliminate empty/contained hyperedges.</li>
+  <li>Repeat. Acyclic ⟺ GYO reduces to ∅. O(||Q||) time.</li>
+</ol>
+<h3>Yannakaki's Algorithm</h3>
+<ol>
+  <li>Compute join tree of H(Q).</li>
+  <li>Assign corresponding relations to nodes.</li>
+  <li>Semi-joins bottom-up.</li>
+  <li>Root non-empty → YES.</li>
+</ol>
+<p><span class="key">Acyclic CQ evaluation: O(||D||·||Q||) — linear time!</span></p>
+<p>Bounded treewidth (graph) / hypertree width (hypergraph) → tractable classes.</p>
+</section>
+
+<!-- Parallel DBMS -->
+<section>
+<h2>23. Parallel &amp; Distributed DBMS</h2>
+<h3>Architectures</h3>
+<table>
+  <tr><th>Type</th><th>Shares</th><th>Pros/Cons</th></tr>
+  <tr><td>Shared Memory</td><td>Mem+Disk</td><td>Easy SW, costly HW, limited scale</td></tr>
+  <tr><td>Shared Disk</td><td>Disk</td><td>Middle ground, easy consistency</td></tr>
+  <tr><td>Shared Nothing</td><td>Nothing</td><td>Cheap, scales well, harder SW</td></tr>
+</table>
+<h3>Parallelism Types</h3>
+<ul>
+  <li><b>Inter-query</b>: different queries in parallel → throughput.</li>
+  <li><b>Intra-query, inter-operator</b>: pipeline &amp; bushy parallelism.</li>
+  <li><b>Intra-query, intra-operator</b>: partition data, run op on each.</li>
+</ul>
+<h3>Partitioning</h3>
+<ul>
+  <li><b>Round-robin</b>: good for load spreading.</li>
+  <li><b>Hash</b>: good for equality lookups, equi-joins, group-by.</li>
+  <li><b>Range</b>: good for range queries + above.</li>
+</ul>
+<h3>Parallel Operators</h3>
+<p>Hash join: hash-partition both on join key → local hash join. Sort-merge: range-partition both → local SMJ. Scan: scan in parallel, merge.</p>
+<h3>Distributed Join Scenarios</h3>
+<ol>
+  <li>One table replicated → local join.</li>
+  <li>Both partitioned on join key → local join.</li>
+  <li>Different keys, one small → broadcast small table.</li>
+  <li>Different keys, both large → reshuffle both.</li>
+</ol>
+<p>Query planning: must consider network cost, data location, skew/bottlenecks.</p>
+</section>
+
+<!-- NoSQL -->
+<section>
+<h2>24. NoSQL</h2>
+<h3>Motivation</h3>
+<p>Web-scale apps need horizontal scaling. 2PC too slow. Distributed RDBMS consistency too expensive.</p>
+<h3>CAP Theorem</h3>
+<p><b>Consistency</b> (all nodes see same data) + <b>Availability</b> + <b>Partition tolerance</b> — pick 2 of 3.</p>
+<h3>BASE</h3>
+<p>Basically Available, Soft state, Eventually consistent.</p>
+<h3>NoSQL Types</h3>
+<table>
+  <tr><th>Type</th><th>Model</th><th>Examples</th></tr>
+  <tr><td>Key-Value</td><td>(k,v) pairs; v opaque</td><td>Redis, DynamoDB</td></tr>
+  <tr><td>Document</td><td>JSON/BSON docs; queryable</td><td>MongoDB, CouchDB</td></tr>
+  <tr><td>Column-Family</td><td>Columns &amp; families</td><td>Cassandra, HBase</td></tr>
+  <tr><td>Graph</td><td>Nodes &amp; edges</td><td>Neo4j, Neptune</td></tr>
+</table>
+<p><b>SQL when</b>: ACID needed, complex joins, stable schema. <b>NoSQL when</b>: horizontal scale, high write throughput, flexible schema. Boundaries blurring (Postgres JSON, MongoDB ACID).</p>
+</section>
+
+<!-- Plan Space Example Key Costs -->
+<section>
+<h2>25. Plan Space Example (Key Costs)</h2>
+<p class="small">Sailors: 500pg, 80tup/pg. Reserves: 1000pg, 100tup/pg. 100 boats, 10 ratings. B=5.</p>
+<table class="small">
+  <tr><th>Plan</th><th>I/Os</th></tr>
+  <tr><td>Page NLJ (no pushdown)</td><td>500,500</td></tr>
+  <tr><td>σ pushdown left (rating>5)</td><td>250,500</td></tr>
+  <tr><td>Join reorder (Res outer)</td><td>6,000</td></tr>
+  <tr><td>+ Materialise inner</td><td>4,250</td></tr>
+  <tr><td>Sort-Merge Join</td><td>3,540</td></tr>
+  <tr><td>Block NLJ + materialise</td><td>2,350</td></tr>
+  <tr><td>π pushdown + reorder</td><td>1,500</td></tr>
+  <tr><td>Index NLJ (clustered bid, uncl. sid)</td><td>1,010</td></tr>
+</table>
+</section>
+
+<!-- Quick Reference -->
+<section>
+<h2>Key Formulas Quick Reference</h2>
+<p class="formula">Ext Sort: passes = 1+⌈log<sub>B-1</sub>⌈N/B⌉⌉, cost = 2N·passes</p>
+<p class="formula">Grace Hash Join: 3(M+N)</p>
+<p class="formula">Block NLJ: M + ⌈M/(B-2)⌉·N</p>
+<p class="formula">SMJ: sort(R)+sort(S)+M+N; refined: 3(M+N)</p>
+<p class="formula">B+ tree height: log<sub>F</sub>(N), F≈133 typical</p>
+<p class="formula">Ext Hash max: B·(B-1) pages, need B>√(f·N)</p>
+<p class="formula">Join sel: 1/max{NKeys(R.A), NKeys(S.A)}</p>
+</section>
+
+</div>
+</body>
+</html>
