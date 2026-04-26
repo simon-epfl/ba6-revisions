@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Advanced Databases — Exam Cheat Sheet</title>
+<style>
+  @page { size: A4; margin: 2.2mm 2.5mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 6.1pt; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    line-height: 1.07;
+    color: #1a1a1a;
+    background: #fff;
+  }
+  .page {
+    column-count: 3;
+    column-gap: 1.5mm;
+    column-fill: balance;
+    width: 205mm;
+    height: 292mm;
+    overflow: hidden;
+    page-break-after: always;
+    padding: 0.3mm 0;
+  }
+  .page:last-child { page-break-after: auto; }
+  .ptitle {
+    column-span: all;
+    text-align: center;
+    font-size: 1.22rem;
+    font-weight: 800;
+    letter-spacing: 0.25px;
+    text-transform: uppercase;
+    border-bottom: 0.7pt solid #1a1a1a;
+    padding-bottom: 0.4px;
+    margin-bottom: 0.8px;
+  }
+  section {
+    border: 0.2pt solid #aaa;
+    border-radius: 1pt;
+    padding: 0.5pt 0.9pt 0.7pt 0.9pt;
+    margin-bottom: 0.7pt;
+    background: #fafafa;
+  }
+  table, tr, h2, h3, h4 { break-inside: avoid; }
+  h2, h3, h4 { break-after: avoid; }
+  h2 {
+    font-size: 1.07rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.12px;
+    color: #fff;
+    margin: -0.5pt -0.9pt 0.4pt -0.9pt;
+    padding: 0.4pt 0.9pt;
+    border-radius: 1pt 1pt 0 0;
+  }
+  h2.blue { background: #1a5276; }
+  h2.green { background: #1e6e3e; }
+  h2.purple { background: #5b2c6f; }
+  h2.red { background: #922b21; }
+  h2.teal { background: #117a65; }
+  h2.orange { background: #a04000; }
+  h2.slate { background: #34495e; }
+  h2.pink { background: #884a6b; }
+  h3 {
+    font-size: 1.0rem;
+    font-weight: 700;
+    margin: 0.5pt 0 0.15pt 0;
+    color: #2c3e50;
+    border-bottom: 0.2pt solid #ccc;
+    padding-bottom: 0.1pt;
+  }
+  h4 {
+    font-size: 0.96rem;
+    font-weight: 700;
+    margin: 0.4pt 0 0.05pt 0;
+    color: #555;
+  }
+  p { margin-bottom: 0.25pt; }
+  ul { padding-left: 1.4em; margin-bottom: 0.25pt; list-style-position: outside; }
+  ol { padding-left: 1.7em; margin-bottom: 0.25pt; list-style-position: outside; }
+  li { margin-bottom: 0.1pt; }
+  li > ul, li > ol { margin-top: 0.1pt; padding-left: 1.2em; }
+  b { font-weight: 700; }
+  i { font-style: italic; }
+  .kw { font-weight: 700; color: #1a5276; }
+  .smallnote { font-size: 0.92rem; color: #555; margin-top: 0.15pt; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+    margin: 0.3pt 0;
+  }
+  th {
+    background: #e8e8e8;
+    font-weight: 700;
+    text-align: left;
+    padding: 0.25pt 0.5pt;
+    border: 0.2pt solid #bbb;
+  }
+  td {
+    padding: 0.25pt 0.5pt;
+    border: 0.2pt solid #ccc;
+    vertical-align: top;
+  }
+  .compact li { margin-bottom: 0; }
+  .hl { background: #fff3cd; padding: 0 0.4pt; border-radius: 0.4pt; }
+  .key { background: #ffe5e5; padding: 0 0.4pt; font-weight: 700; }
+  .formula { background: #fff9c4; padding: 0.15pt 0.5pt; border-radius: 0.4pt; font-family: 'Courier New', monospace; font-size: 0.94rem; display: block; margin: 0.2pt 0; }
+  .recipe { background: #e8f4ec; padding: 0.4pt 0.9pt; border-left: 1pt solid #1e6e3e; margin: 0.3pt 0; border-radius: 0 0.5pt 0.5pt 0; }
+  .recipe b { color: #1e6e3e; }
+  code { font-family: 'Courier New', monospace; font-size: 0.94rem; background: #f0f0f0; padding: 0 0.3pt; border-radius: 0.3pt; }
+</style>
+</head>
+<body>
+
+<!-- ==================== PAGE 1 ==================== -->
+<div class="page">
+<div class="ptitle">Page 1 — SQL/RA · Storage · Indexing · Sort/Hash/Joins · Optimisation</div>
+
+<section>
+<h2 class="blue">SQL &amp; Relational Algebra</h2>
+<h3>SQL Evaluation Order</h3>
+<p>FROM → WHERE → GROUP BY → HAVING → SELECT → DISTINCT → ORDER BY → LIMIT.</p>
+<h3>RA Operators</h3>
+<ul class="compact">
+  <li><b>σ</b> selection (rows), <b>π</b> projection (cols), <b>ρ</b> rename.</li>
+  <li><b>∪</b> union, <b>−</b> difference, <b>×</b> cross product, <b>∩</b> = R−(R−S).</li>
+  <li><b>⋈</b> join = σ<sub>θ</sub>(R×S); natural join projects away duplicate cols.</li>
+  <li>Theta join ⊃ Equi-join ⊃ Natural join.</li>
+  <li><b>Left anti-join</b>: tuples in R with no match in S. <b>Outer joins</b>: pad unmatched side with NULL.</li>
+</ul>
+<h3>Equivalences (rewriting heuristics)</h3>
+<ul class="compact">
+  <li>Push σ down (filter early); push π down (drop attrs early).</li>
+  <li>σ cascade: σ<sub>p∧q</sub> = σ<sub>p</sub>(σ<sub>q</sub>); σ commutes; π cascade.</li>
+  <li>⋈ assoc/commut; avoid × (replace with ⋈ + condition).</li>
+</ul>
+<h3>Codd's Theorem</h3>
+<p>Relational Calculus ≡ Relational Algebra in expressiveness.</p>
+</section>
+
+<section>
+<h2 class="purple">Storage &amp; Disk</h2>
+<h3>Hierarchy</h3>
+<p>CPU Reg (&lt;1ns) → Cache (&lt;10ns) → DRAM (100ns) → SSD (0.1ms) → HDD (10ms) → Network (30ms).</p>
+<h3>Disk Time</h3>
+<p class="formula">T = Seek + Rot. delay + Transfer</p>
+<p>Seq I/O ≫ random (≈100× HDD). Outer tracks have more sectors at same RPM ⇒ <b>higher transfer rate on outer cylinders</b>. Place hot small files on outer tracks, large sequential files in contiguous cylinders.</p>
+<h3>Page = Block</h3>
+<p>Unit of I/O, 4–64 KB. Disk-space mgr maps pageId → physical loc.</p>
+<h3>Prefetching</h3>
+<p>Reads ahead into pool while CPU works on current page → hides I/O latency on sequential scans. DBMS may prefer its own prefetch (knows access pattern, supports asynchronous I/O, can avoid polluting buffer with read-once pages).</p>
+</section>
+
+<section>
+<h2 class="purple">Buffer Management</h2>
+<p>Pool of frames; each holds <code>pageId</code>, dirty flag, <b>pin counter</b> (not flag — many readers share a page).</p>
+<h3>API</h3>
+<p><code>pin(pid)</code>: in pool → pinCnt++; else evict victim (write back if dirty), read in. <code>unpin(pid, dirty)</code>: pinCnt−−; OR-in dirty. Also <code>newPage</code>, <code>freePage</code>.</p>
+<h3>Replacement Policies</h3>
+<ul class="compact">
+  <li><b>LRU</b>: evict least-recently <i>unpinned</i>. Bad for sequential flooding (scan with N+1 pages → all misses).</li>
+  <li><b>Clock</b>: approx LRU; ref bit + circular sweep. Skip pinned; ref=1→clear; ref=0→evict.</li>
+  <li><b>MRU</b>: better for repeated full scans.</li>
+</ul>
+<p><b>Why pinCount, not pinFlag?</b> multiple operators may need the same page; flag would lose count. <b>Why don't evict on pinCnt=0?</b> Because that page may still be the cheapest <i>kept</i>; replacement chooses based on policy, not first-fit. <b>All dirty?</b> Pick a victim per policy, flush its dirty page (WAL-logs first), then load.</p>
+</section>
+
+<section>
+<h2 class="purple">Files, Pages, Records</h2>
+<h3>File Organisations</h3>
+<ul class="compact">
+  <li><b>Heap</b>: unordered (linked-list of pages or page directory). Fast insert (2 I/O), slow search.</li>
+  <li><b>Sorted</b>: keys ordered. Binary search log₂P. Insert costs (log₂P + P).</li>
+  <li><b>Index</b>: B+ tree (range), hash (equality only).</li>
+</ul>
+<h3>Page Layout</h3>
+<ul class="compact">
+  <li><b>Fixed-length packed</b>: <code>RID = (pid, slot#)</code>. Delete moves last record into the gap → <span class="key">RID changes</span>. No good if external pointers exist.</li>
+  <li><b>Fixed-length unpacked</b>: bitmap of free slots; deletion just clears a bit. RIDs stable.</li>
+  <li><b>Slotted page</b>: header + slot directory of (offset, length); records grow from end of page toward middle. Variable-length OK; delete sets slot=−1 (RID stable). On overflow, may compact in place.</li>
+</ul>
+<h3>Slotted vs Packed (exam)</h3>
+<p><b>+</b> stable RIDs, variable-length records, in-place compaction. <b>−</b> per-record indirection (slot dir lookup), tiny space overhead per slot.</p>
+<h3>Record Layout</h3>
+<p>Fixed: direct field offset. Variable: array of (offset,len) + NULL bitmap.</p>
+</section>
+
+<section>
+<h2 class="purple">Storage Models &amp; Compression</h2>
+<table>
+  <tr><th>Model</th><th>Use</th><th>Layout</th></tr>
+  <tr><td>Row (NSM)</td><td>OLTP</td><td>All attrs of tuple together</td></tr>
+  <tr><td>Col (DSM)</td><td>OLAP</td><td>One attr contiguous; reconstruct via RID</td></tr>
+  <tr><td>PAX</td><td>Hybrid</td><td>Row groups → col chunks inside page</td></tr>
+</table>
+<p><b>OLTP</b>: short, point R/W, high concurrency. <b>OLAP</b>: scans, aggregates, read-heavy.</p>
+<h3>Columnar Compression</h3>
+<ul class="compact">
+  <li><b>RLE</b>: (value, run-len). Best for sorted low-cardinality.</li>
+  <li><b>Delta</b>: encode differences; great for sorted numerics/timestamps.</li>
+  <li><b>Bit-packing</b>: use ⌈log₂(max)⌉ bits per value.</li>
+  <li><b>Dictionary</b>: replace values with small codes; most common; supports predicates without decompressing.</li>
+</ul>
+</section>
+
+<section>
+<h2 class="blue">File-Org I/O Costs</h2>
+<p class="smallnote">P = pages, R = recs/page, D = avg I/O time.</p>
+<table>
+  <tr><th>Op</th><th>Heap</th><th>Sorted</th></tr>
+  <tr><td>Scan</td><td>P·D</td><td>P·D</td></tr>
+  <tr><td>Eq. search (key)</td><td>0.5P·D</td><td>log₂P·D</td></tr>
+  <tr><td>Eq. search (non-key)</td><td>P·D</td><td>(log₂P+match)·D</td></tr>
+  <tr><td>Range search (M recs)</td><td>P·D</td><td>(log₂P + M/R)·D</td></tr>
+  <tr><td>Insert</td><td>2D</td><td>(log₂P + P)·D</td></tr>
+  <tr><td>Delete</td><td>(0.5P+1)·D</td><td>(log₂P + P)·D</td></tr>
+</table>
+<div class="recipe">
+<b>Choose file org (exam rubric).</b>
+<ol class="compact">
+  <li>Daily-rebuild + bulk insert + 1 lookup: <b>heap</b> (insert is dominant).</li>
+  <li>Many range queries, few inserts: <b>sorted</b> or <b>clustered B+</b>.</li>
+  <li>Equality only: <b>hash</b>.</li>
+  <li>Many lookups + occasional insert: <b>clustered B+</b>.</li>
+</ol>
+</div>
+</section>
+
+<section>
+<h2 class="blue">Indexes</h2>
+<h3>Index Entries (k*)</h3>
+<p>A: full record stored in leaf (≤1 such index/table). B: ⟨k, rid⟩. C: ⟨k, [rid list]⟩.</p>
+<h3>Clustered vs Unclustered</h3>
+<p>Clustered ≈ data file order matches index, ≤1 per table. <span class="key">Clustered range I/O ≈ #matching <i>pages</i></span>; <span class="key">unclustered ≈ #matching <i>records</i></span> (one I/O per RID, worst case).</p>
+<h3>ISAM</h3>
+<p>Static tree, overflow chains on insert. Fanout F≫2 → search log<sub>F</sub>(N). Good for static data (less locking on inner).</p>
+<h3>B+ Tree</h3>
+<ul class="compact">
+  <li>Order d: every node has d ≤ #entries ≤ 2d (root may have ≥1).</li>
+  <li>Inner: 2d keys + 2d+1 pointers; leaves: 2d entries + sibling ptr.</li>
+  <li>Always balanced; height = #edges root→leaf.</li>
+  <li>Typical fanout F ≈ 133, fill ~67%. h=3 → ~2.4M; h=4 → ~313M records.</li>
+  <li>Optimisations: prefix compression (inner keys), suffix truncation.</li>
+</ul>
+<div class="recipe">
+<b>B+ insert (split rule).</b>
+<ol class="compact">
+  <li>Descend to leaf L for key k.</li>
+  <li>If L has space, insert in sorted order. Done.</li>
+  <li>If full, split L into L (left) and L' (right). Per exam convention "new right gets larger half": L keeps d entries, L' gets d+1.</li>
+  <li><b>Copy</b> L'.firstKey up to parent (leaf split = copy-up).</li>
+  <li>If parent full, split parent: <b>push</b> middle key up (inner split = push-up, key removed from inner).</li>
+  <li>Propagate; if root splits, new root with 1 key → height++.</li>
+</ol>
+</div>
+<div class="recipe">
+<b>B+ height bounds (insert 1..N, order d).</b>
+<ul class="compact">
+  <li>h=0: ≤ 2d entries (single leaf).</li>
+  <li>h=1: 2 ≤ #leaves ≤ 2d+1; entries ∈ [d+1, (2d+1)·2d].</li>
+  <li>h=2: smallest N = (d+1)·d+1 leaves filled to d (min) is too few — for "minimum N to <i>force</i> h=2" use #entries that overflow root at h=1: <span class="formula">N<sub>min,h=2</sub> = 2d·(2d+1)+1</span></li>
+  <li>Largest N at h=2: full tree = (2d+1)<sup>2</sup>·2d entries.</li>
+  <li>Min entries in B+ of height h ≥1: <span class="formula">(d+1)<sup>h</sup>·d</span> (root 1 key, every inner d+1 children, every leaf d entries).</li>
+</ul>
+</div>
+<h3>Hash Indexes</h3>
+<ul class="compact">
+  <li>Equality only. h(k) → bucket + chain.</li>
+  <li><b>Static</b>: chain grows on overflow → degrades.</li>
+  <li><b>Extendible</b>: directory size 2<sup>g</sup> (global depth); each bucket has local depth d. Overflow: split bucket; if d=g, double directory.</li>
+  <li><b>Linear hashing</b>: split next bucket in round even if not the one overflowing → no directory.</li>
+</ul>
+</section>
+
+<section>
+<h2 class="green">External Sorting</h2>
+<p>N pages, B buffer pages.</p>
+<p class="formula">Pass 0: ⌈N/B⌉ runs of B pages each (sorted in memory)</p>
+<p class="formula">Passes 1+: merge B−1 runs at a time → fewer, longer runs</p>
+<p class="formula"># passes = 1 + ⌈log<sub>B−1</sub>⌈N/B⌉⌉</p>
+<p class="formula">Total I/O = 2·N · #passes</p>
+<p><b>Blocked I/O</b>: read/write b pages at a time → fewer seeks but each pass merges ⌊(B−b)/b⌋ runs. Reduces I/O <i>time</i>, may add a pass.</p>
+<p class="smallnote">2020 example: N=9600, B=192 → Pass0: 50 runs of 192. Then ⌈log<sub>191</sub>50⌉=1 pass. Total passes=2, I/O = 2·9600·2 = 38400 page-I/Os. Time = 38400·(10+5+1)ms.</p>
+<p>Sort via clustered B+: traverse leaves — strictly better. Unclustered: 1 I/O per record — almost always worse than ext sort.</p>
+</section>
+
+<section>
+<h2 class="green">External Hashing &amp; Aggregation</h2>
+<p><b>Phase 1 Partition</b>: hash h<sub>p</sub> → B−1 partitions, each ≤ B pages ideally.</p>
+<p><b>Phase 2 Rehash</b>: for each partition, build in-mem hash with h<sub>r</sub> ≠ h<sub>p</sub>; emit groups/dups.</p>
+<p>Need <b>B &gt; √(f·N)</b> (f = fudge factor for in-mem table). Max table B·(B−1) pages.</p>
+<p>Use <b>hash</b> for DISTINCT/GROUP BY (scales with #distinct). Use <b>sort</b> if output ordering needed.</p>
+</section>
+
+<section>
+<h2 class="green">Join Algorithms</h2>
+<p class="smallnote">R: M pages / m tuples. S: N pages / n tuples. B buffer pages.</p>
+<table>
+  <tr><th>Algorithm</th><th>Cost</th></tr>
+  <tr><td>Simple NLJ (per-tuple)</td><td>M + m·N</td></tr>
+  <tr><td>Page NLJ</td><td>M + M·N</td></tr>
+  <tr><td>Block NLJ (chunks of B−2)</td><td>M + ⌈M/(B−2)⌉·N</td></tr>
+  <tr><td>Index NLJ</td><td>M + m·(lookup-cost)</td></tr>
+  <tr><td>Sort-Merge</td><td>sort(R)+sort(S)+M+N</td></tr>
+  <tr><td>SMJ refined (merge during last pass)</td><td>3(M+N) when both fit in B<sup>2</sup></td></tr>
+  <tr><td>Grace Hash (GHJ)</td><td>3(M+N)</td></tr>
+  <tr><td>Build relation fits in B−2</td><td>M+N (optimal)</td></tr>
+</table>
+<div class="recipe">
+<b>Choose join (exam recipe).</b>
+<ol class="compact">
+  <li>Equi-join &amp; one fits in B → <b>in-mem hash/build</b> = M+N.</li>
+  <li>Equi-join, neither fits, both ≤ B<sup>2</sup>:
+    <ul class="compact">
+      <li>Pre-sorted on key → <b>SMJ refined</b> = 3(M+N).</li>
+      <li>Otherwise → <b>Grace Hash</b> = 3(M+N).</li>
+    </ul>
+  </li>
+  <li>Equi-join, index on inner → <b>Index NLJ</b> if outer small.</li>
+  <li>Theta/inequality → <b>Block NLJ</b> = M + ⌈M/(B−2)⌉N (smaller as outer).</li>
+  <li>Output needs sort → favour SMJ to avoid resort.</li>
+</ol>
+</div>
+<h3>BNLJ Tips</h3>
+<p>Smaller as outer. Reserve 1 page for inner scan, 1 for output, B−2 for outer block. <b>Joining 3 rels at once</b>: outer P pages, two inner each ⌈(N−P)/2⌉ scanned for every outer chunk: cost ≈ N + ⌈N/P⌉·N + ⌈N/P⌉·⌈P/(B−1−P)⌉·N (full inner triple loop). Optimum P trades scans of two inners against rescans of outer.</p>
+<h3>Sort-Merge</h3>
+<p>Sort R, S on join key, then walk pointers. Refinement: if Pass-0 runs total ≤ B−1, last merge can also do the join → <span class="formula">3(M+N)</span>.</p>
+<h3>Grace Hash</h3>
+<p>Phase 1: hash R on h<sub>p</sub>; hash S on same h<sub>p</sub> (cost 2(M+N) read+write). Phase 2: per-bucket build (smaller side) + probe (cost M+N). If a bucket overflows, recursive partition with h<sub>r</sub>.</p>
+<h3>Outer / Anti-Join Adapts</h3>
+<p><b>BNLJ left anti</b>: for each R tuple track "matched" flag; output only unmatched. Same cost as BNLJ. <b>SMJ left anti</b>: merge; if R-key &lt; S-key advance R and emit; if equal skip all R-equal &amp; advance both; if &gt;, advance S. <b>Hash full outer</b>: in build, mark matched bucket entries during probe → at end emit unmatched build entries with NULLs; for probe side emit unmatched probe with NULLs as you go.</p>
+</section>
+
+<section>
+<h2 class="slate">Processing Models</h2>
+<table>
+  <tr><th>Model</th><th>Dir</th><th>Emits</th><th>Use</th></tr>
+  <tr><td>Iterator (Volcano)</td><td>Top-down</td><td>1 tuple</td><td>General</td></tr>
+  <tr><td>Vectorised</td><td>Top-down</td><td>Batch</td><td>OLAP</td></tr>
+  <tr><td>Materialisation</td><td>Bottom-up</td><td>All</td><td>OLTP</td></tr>
+</table>
+<p>Iterator: <code>open/next/close</code>; pipelined. Blocking ops (sort, hash-build, group-by) break pipeline. <b>Materialisation costing</b>: each non-leaf op writes out + next op reads in → add output size to cost.</p>
+</section>
+
+<section>
+<h2 class="green">Query Optimisation Pipeline</h2>
+<p>SQL → Parser → Rewriter (RA equiv.) → Optimiser (cost) → Plan → Executor.</p>
+<h3>Heuristic Rewrites</h3>
+<ul class="compact">
+  <li>Push σ down past ⋈ when predicate uses one side only.</li>
+  <li>Push π down (drop unused attrs early).</li>
+  <li>Convert × + σ to ⋈.</li>
+  <li>Decompose conjunctions: σ<sub>p∧q</sub> → σ<sub>p</sub>(σ<sub>q</sub>) (separately optimisable).</li>
+</ul>
+<h3>Access Methods</h3>
+<ul class="compact">
+  <li><b>Sequential scan</b>: M I/O.</li>
+  <li><b>Index scan</b>: composite (A₁..Aₙ) — matches m equality + ≤1 range on next attr (prefix-match rule).</li>
+  <li><b>Index-only scan</b>: query attrs ⊆ index → no heap I/O.</li>
+  <li><b>Multi-index / BitmapAnd / BitmapOr</b>: take RID sets from several indexes, intersect/union, fetch heap pages.</li>
+</ul>
+<h3>EXPLAIN Reading (PG)</h3>
+<p>Bitmap Heap Scan + BitmapAnd → two indexes (B+ on each cond, must support range). Index-Only Scan → covering index (B+ tree). Hash Join builds hash on inner. Seq Scan → no useful index or full table.</p>
+</section>
+
+<section>
+<h2 class="green">Cost Estimation &amp; Selectivity</h2>
+<p>sel(P) = |out|/|in| ∈ [0,1].</p>
+<table>
+  <tr><th>Predicate</th><th>sel()</th></tr>
+  <tr><td>A = c</td><td>1/NKeys(A)</td></tr>
+  <tr><td>A &gt; a (uniform int)</td><td>(High−a)/(High−Low+1)</td></tr>
+  <tr><td>A IN (c₁..cₖ)</td><td>k/NKeys(A)</td></tr>
+  <tr><td>A.x = B.y (join)</td><td>1/max{NKeys(A.x), NKeys(B.y)}</td></tr>
+  <tr><td>NOT P</td><td>1 − sel(P)</td></tr>
+  <tr><td>P₁ ∧ P₂</td><td>sel(P₁)·sel(P₂) (indep.)</td></tr>
+  <tr><td>P₁ ∨ P₂</td><td>sel(P₁)+sel(P₂)−sel(P₁)·sel(P₂)</td></tr>
+</table>
+<p class="formula">|R ⋈ S| ≈ |R|·|S| / max{NKeys(R.A), NKeys(S.A)}</p>
+<p>Key–FK join (FK non-null): |R ⋈ S| = |many-side|.</p>
+<h3>Histograms</h3>
+<p>Equi-width (fixed bucket width) vs <b>equi-depth</b> (fixed tuples/bucket — better skew handling). For predicate A op a, identify bucket(s); within a bucket assume uniform.</p>
+<div class="recipe">
+<b>Plan-cost recipe (estimating output size at each node).</b>
+<ol class="compact">
+  <li>Start at leaves: |scan(R)| = |R|, pages = ⌈|R|/R<sub>pp</sub>⌉.</li>
+  <li>σ: |out| = sel(P) · |in|. Re-derive #pages from new tuple count (or keep |R|/R<sub>pp</sub> if pages aren't recomputed).</li>
+  <li>⋈: use formula above. With FK: |out| = |child rel|.</li>
+  <li>γ (group-by on A): |out| ≈ NKeys(A).</li>
+  <li>Apply materialisation: each non-scan op writes |out|/R<sub>pp</sub> pages and the next op reads them.</li>
+</ol>
+</div>
+<h3>NOT Trick</h3>
+<p>NOT((A&gt;5 ∧ A≤20) ∨ (A&gt;10)) = ¬(A&gt;5 ∧ A≤20) ∧ ¬(A&gt;10) = (A≤5 ∨ A&gt;20) ∧ (A≤10) = A≤5. Always simplify before reading histogram.</p>
+</section>
+
+<section>
+<h2 class="green">Search Strategy (System R)</h2>
+<ul class="compact">
+  <li><b>Left-deep only</b>: inner is base relation → enables pipelining + index NLJ.</li>
+  <li><b>DP</b>: pass k builds best k-relation plans by extending best (k−1)-plans by 1 relation.</li>
+  <li>Eliminate cross products. Keep cheapest plan per "interesting order" (ORDER BY, GROUP BY, future join keys).</li>
+</ul>
+<div class="recipe">
+<b>Counting plans (n-relation join).</b>
+<ul class="compact">
+  <li>Total left-deep orderings: <b>n!</b>.</li>
+  <li>Total binary trees on n leaves (incl. non-left-deep): <b>n!·C<sub>n−1</sub></b> where C<sub>k</sub>=Catalan = (2k)!/((k+1)!k!).</li>
+  <li>System R prunes: only orderings that avoid × (i.e., next relation must share a join attr with previous result). For chain query R-S-T-U: 2·(n−1)·… worked-example: 2020-Q1b had 4 rels, chain → System R considers <b>8 left-deep orders</b> (start at R or U, at each step extend with one neighbour).</li>
+</ul>
+</div>
+</section>
+
+<section>
+<h2 class="slate">Plan-Space Worked Example</h2>
+<p class="smallnote">Sailors 500 pg / 80 tup; Reserves 1000 pg / 100 tup; 100 boats, 10 ratings. B=5.</p>
+<table>
+  <tr><th>Plan</th><th>I/Os</th></tr>
+  <tr><td>Page NLJ (no pushdown)</td><td>500 500</td></tr>
+  <tr><td>+ σ pushdown left (rating&gt;5)</td><td>250 500</td></tr>
+  <tr><td>+ Reserves outer</td><td>6 000</td></tr>
+  <tr><td>+ Materialise inner</td><td>4 250</td></tr>
+  <tr><td>SMJ</td><td>3 540</td></tr>
+  <tr><td>Block NLJ + materialise</td><td>2 350</td></tr>
+  <tr><td>+ π pushdown</td><td>1 500</td></tr>
+  <tr><td>Index NLJ (cl. bid, uncl. sid)</td><td>1 010</td></tr>
+</table>
+</section>
+
+</div>
+
+<!-- ==================== PAGE 2 ==================== -->
+<div class="page">
+<div class="ptitle">Page 2 — Transactions · Recovery · 2PC · CQs · Parallel · NoSQL</div>
+
+<section>
+<h2 class="red">Transactions &amp; ACID</h2>
+<ul class="compact">
+  <li><b>Atomicity</b>: all-or-nothing (logging).</li>
+  <li><b>Consistency</b>: app + integrity constraints.</li>
+  <li><b>Isolation</b>: concurrent ≡ serial (CC).</li>
+  <li><b>Durability</b>: commits survive crashes (WAL).</li>
+</ul>
+<p>Schedule S = interleaving of ops preserving per-txn order. Two ops <b>conflict</b> iff same object &amp; ≥1 is W.</p>
+<table>
+  <tr><th>Conflict</th><th>Anomaly</th></tr>
+  <tr><td>R–W</td><td>Unrepeatable read</td></tr>
+  <tr><td>W–R</td><td>Dirty read</td></tr>
+  <tr><td>W–W</td><td>Lost update</td></tr>
+</table>
+</section>
+
+<section>
+<h2 class="red">Serializability</h2>
+<p><b>Conflict-equiv</b>: same conflict pairs in same order. <b>Conflict-serializable</b> ⟺ ∃ serial conflict-equivalent.</p>
+<div class="recipe">
+<b>Precedence-graph recipe.</b>
+<ol class="compact">
+  <li>Node per txn.</li>
+  <li>For each pair of conflicting ops (T<sub>i</sub> first, T<sub>j</sub> later): add edge T<sub>i</sub>→T<sub>j</sub> (don't duplicate).</li>
+  <li><span class="key">Conflict-serializable ⟺ acyclic.</span></li>
+  <li>If acyclic, every <b>topological order</b> is a conflict-equivalent serial schedule. # of such serial schedules = # of topological orderings of the DAG.</li>
+  <li>If cyclic, remove one op from a cycle to break it; verify by rebuilding graph.</li>
+</ol>
+</div>
+<p><b>View-serializable</b>: same initial reads, read-from, final writes. View ⊃ Conflict (allows blind writes). NP-hard; not used. <b>Serial ⊂ Conflict ⊂ View ⊂ All</b>.</p>
+</section>
+
+<section>
+<h2 class="red">Locking &amp; 2PL</h2>
+<table>
+  <tr><th></th><th>S</th><th>X</th></tr>
+  <tr><td>S</td><td>✓</td><td>✗</td></tr>
+  <tr><td>X</td><td>✗</td><td>✗</td></tr>
+</table>
+<h3>2PL</h3>
+<p><b>Growing</b> (acquire) → <b>Shrinking</b> (release). No new lock after first release. <span class="key">2PL ⇒ conflict-serializable</span> (but not vice versa).</p>
+<h3>Strict 2PL</h3>
+<p>Hold ALL locks until commit/abort. Avoids cascading aborts &amp; dirty reads. Standard in practice.</p>
+<h3>Deadlocks</h3>
+<div class="recipe">
+<b>Wait-for graph (detection).</b>
+<ol class="compact">
+  <li>Node per active txn.</li>
+  <li>If T<sub>i</sub> waits on a lock held by T<sub>j</sub>: edge T<sub>i</sub>→T<sub>j</sub>.</li>
+  <li>Cycle ⇒ deadlock. Pick victim (least-work-done / youngest) and abort.</li>
+</ol>
+</div>
+<p><b>Prevention by timestamps</b> (older = higher priority; restarted txn keeps original ts to prevent starvation).</p>
+<table>
+  <tr><th>Strategy</th><th>Old wants lock held by Young</th><th>Young wants lock held by Old</th></tr>
+  <tr><td>Wait-Die</td><td>Old waits</td><td>Young aborts (dies)</td></tr>
+  <tr><td>Wound-Wait</td><td>Old preempts (wounds Young)</td><td>Young waits</td></tr>
+</table>
+<p>Both <b>avoid</b> all deadlocks (no cycle possible) but <b>do abort txns unnecessarily</b> (false positives — txns that wouldn't have deadlocked).</p>
+</section>
+
+<section>
+<h2 class="red">Recovery — WAL &amp; ARIES</h2>
+<table>
+  <tr><th></th><th>STEAL</th><th>NO-STEAL</th></tr>
+  <tr><td>FORCE</td><td>Undo+No-Redo</td><td>No-Undo+No-Redo (simplest)</td></tr>
+  <tr><td>NO-FORCE</td><td class="hl">Undo+Redo (fastest)</td><td>No-Undo+Redo</td></tr>
+</table>
+<p>Standard: <b>STEAL + NO-FORCE</b> → must do undo + redo via WAL.</p>
+<h3>WAL Rules</h3>
+<ul class="compact">
+  <li><b>Rule 1</b>: log records for a page flushed before that page → enables UNDO (atomicity).</li>
+  <li><b>Rule 2</b>: all log records up to commit flushed before commit returns → enables REDO (durability).</li>
+</ul>
+<h3>Log Record Types</h3>
+<p><code>BEGIN</code>, <code>UPDATE(LSN, txn, pid, before, after, prevLSN)</code>, <code>COMMIT</code>, <code>ABORT</code>, <code>END</code>, <code>CLR(undoNextLSN)</code>, <code>BEGIN_CHECKPOINT</code>, <code>END_CHECKPOINT(ATT, DPT)</code>.</p>
+<h3>Tables</h3>
+<p><b>ATT</b> (active txn): {txn → lastLSN, status}. <b>DPT</b> (dirty page): {pid → recLSN = first LSN that dirtied it since last flush}.</p>
+<div class="recipe">
+<b>ARIES — 3 phases.</b>
+<ol class="compact">
+  <li><b>Analysis</b> (forward from last <code>BEGIN_CHECKPOINT</code>): rebuild ATT &amp; DPT.
+    <ul class="compact">
+      <li>UPDATE on pid not in DPT → add (pid, LSN).</li>
+      <li>UPDATE/CLR → ATT[txn].lastLSN = LSN.</li>
+      <li>COMMIT → ATT[txn].status = C; ABORT → status = U.</li>
+      <li>END → remove from ATT.</li>
+      <li>End point: smallest recLSN in DPT (= redoLSN).</li>
+    </ul>
+  </li>
+  <li><b>Redo</b> (forward from redoLSN): <i>repeat history</i>. For each UPDATE/CLR, if pid ∈ DPT and LSN ≥ recLSN(pid) and pageLSN(pid) &lt; LSN → reapply, set pageLSN=LSN.</li>
+  <li><b>Undo</b> (backward): for each loser (status=U in ATT), follow prevLSN chain, write a <b>CLR</b> per UPDATE undone (CLR.undoNextLSN = update.prevLSN). When chain exhausted, write <code>END</code>. CLRs are redo-only (never undone).</li>
+</ol>
+</div>
+<h3>Checkpoint</h3>
+<p><code>BEGIN_CHECKPOINT</code> — note position. <code>END_CHECKPOINT</code> — write current ATT &amp; DPT to log. Doesn't flush dirty pages (fuzzy). Recovery starts from BEGIN_CHECKPOINT.</p>
+</section>
+
+<section>
+<h2 class="teal">Distributed Transactions — 2PC</h2>
+<p>Lock tables co-partitioned with data. Global deadlock: union waits-for graphs at periodic central node.</p>
+<div class="recipe">
+<b>2PC protocol (assume all vote yes).</b>
+<ol class="compact">
+  <li><b>Prepare phase</b>: Coord <code>flush PREPARE</code> (20ms log) → broadcast PREPARE → each Part receives, <code>flush PREPARE</code> → sends YES.</li>
+  <li>Coord receives all YES → <code>flush COMMIT</code> → broadcasts COMMIT.</li>
+  <li>Each Part receives COMMIT → <code>flush COMMIT</code> → sends ACK.</li>
+  <li>Coord receives all ACKs → <code>flush END</code> (often unlogged: presumed-commit).</li>
+</ol>
+</div>
+<div class="recipe">
+<b>Timing problem (exam).</b>
+<ol class="compact">
+  <li>Identify slowest Part round-trip: max<sub>i</sub> 2·rtt(coord, i).</li>
+  <li>Total = log<sub>coord-prepare</sub> + max{rtt + log<sub>part-prepare</sub> + rtt + log<sub>coord-commit</sub>... } — work it through participant by participant.</li>
+  <li>Coord finishes when last ACK arrives + flush END.</li>
+  <li><b>Crash of Part during phase 2</b>: coord must wait until Part recovers + redoes commit → ACK. Coord can finish at max(orig finish, recovery time + ack rtt).</li>
+  <li><b>Crash of Coord</b>: on recovery reads log; if COMMIT in log → rerun phase 2; if only PREPARE → can presumed-abort or rerun PREPARE depending on protocol.</li>
+</ol>
+</div>
+<h3>Recovery Cases</h3>
+<table>
+  <tr><th>Node</th><th>Log state</th><th>Action</th></tr>
+  <tr><td>Coord</td><td>commit + end</td><td>Nothing (txn done)</td></tr>
+  <tr><td>Coord</td><td>commit only</td><td>Re-broadcast COMMIT (phase 2)</td></tr>
+  <tr><td>Coord</td><td>prepare/none</td><td>Presumed abort</td></tr>
+  <tr><td>Part</td><td>prepare + commit</td><td>Re-send ACK</td></tr>
+  <tr><td>Part</td><td>prepare only</td><td>Inquire coord (blocking!)</td></tr>
+  <tr><td>Part</td><td>none</td><td>Presumed abort</td></tr>
+</table>
+<p>2PC is <b>blocking</b> on single failure (Part stuck after prepare). Paxos Commit / 3PC address this.</p>
+</section>
+
+<section>
+<h2 class="orange">Conjunctive Queries (CQs)</h2>
+<p>CQ = {σ, π, ⋈}-fragment = ∃-∧ fragment of FO = simple SELECT-FROM-WHERE with AND + equalities.</p>
+<p class="formula">Q(x̄) :- R₁(v̄₁), …, R<sub>m</sub>(v̄<sub>m</sub>)</p>
+<p>x̄ = head/distinguished vars (must each appear in body).</p>
+<h3>Semantics — Match / Homomorphism</h3>
+<p>h: vars(Q) → terms(D), <b>identity on constants</b>, with h(R<sub>i</sub>(v̄<sub>i</sub>)) ∈ D for all i. Output tuple = (h(x̄)). Q(D) = set of all such tuples.</p>
+<div class="recipe">
+<b>Compute Q(D) by hand.</b>
+<ol class="compact">
+  <li>List atoms; pin every constant.</li>
+  <li>For one atom at a time, enumerate D-tuples that <i>match the atom's pattern</i> (constants and same-var equalities).</li>
+  <li>Take the join of partial homomorphisms over shared vars.</li>
+  <li>Project onto head vars.</li>
+</ol>
+</div>
+<h3>Complexity</h3>
+<table>
+  <tr><th>Problem</th><th>Complexity</th></tr>
+  <tr><td>Eval combined</td><td class="key">NP-complete</td></tr>
+  <tr><td>Eval data</td><td>PTIME, ‖D‖<sup>O(‖Q‖)</sup></td></tr>
+  <tr><td>Satisfiability</td><td>Trivial (canonical DB)</td></tr>
+  <tr><td>Containment / Equiv</td><td>NP-complete</td></tr>
+</table>
+<h3>Homomorphism Theorem</h3>
+<p><b>Q₁ ⊆ Q₂ ⟺ ∃ query hom h: Q₂ → Q₁</b> (i.e. h(body(Q₂)) ⊆ body(Q₁) and h(head(Q₂)) = head(Q₁)).</p>
+<p><b>UCQ containment</b>: U={Q₁..Q<sub>n</sub>} ⊆ U'={Q'₁..Q'<sub>m</sub>} ⟺ ∀i ∃j Q<sub>i</sub> ⊆ Q'<sub>j</sub>. (⇐) trivial. (⇒) use canonical DB D<sub>Qi</sub> for each Q<sub>i</sub>; freeze head as constants; the head tuple is in U(D<sub>Qi</sub>) ⊆ U'(D<sub>Qi</sub>) so some Q'<sub>j</sub>(D<sub>Qi</sub>) returns it ⇒ hom Q'<sub>j</sub>→Q<sub>i</sub>.</p>
+<div class="recipe">
+<b>Minimisation (compute the core).</b>
+<ol class="compact">
+  <li>For each atom α in body, try to find query hom h: Q → Q\{α} (identity on head vars / constants).</li>
+  <li>If yes, drop α and repeat from start.</li>
+  <li>Else keep α.</li>
+  <li>Result is unique up to var renaming = the <b>core</b>.</li>
+</ol>
+</div>
+<p class="smallnote">Tip: atoms with ≥1 unique variable not appearing elsewhere can never be removed — they witness an existential not derivable from others.</p>
+</section>
+
+<section>
+<h2 class="orange">Acyclic CQs &amp; Yannakakis</h2>
+<p><b>Hypergraph H(Q)</b>: nodes = vars; hyperedges = atoms (set of vars in atom; constants ignored or kept as singletons).</p>
+<h3>Acyclicity (α-acyclic)</h3>
+<p>H acyclic ⟺ ∃ <b>join tree</b> T: nodes labelled by hyperedges; for every var v, the set of nodes whose label contains v forms a connected subtree. (a.k.a. running-intersection property)</p>
+<div class="recipe">
+<b>GYO Reduction (test acyclicity).</b>
+<ol class="compact">
+  <li>Eliminate any vertex contained in ≤1 hyperedge (called an <i>ear</i> tip).</li>
+  <li>Eliminate any hyperedge that is empty or contained in another.</li>
+  <li>Repeat until nothing changes.</li>
+  <li><b>∅ ⇒ acyclic</b> (build join tree from elimination order, reverse). Otherwise <b>not acyclic</b>; surviving hypergraph witnesses cyclicity (often a 3-cycle of hyperedges sharing pairwise vars).</li>
+</ol>
+</div>
+<div class="recipe">
+<b>Yannakakis (eval acyclic CQ).</b>
+<ol class="compact">
+  <li>Build join tree T; root anywhere.</li>
+  <li><b>Up-pass</b>: for each leaf-to-root edge, semi-join child into parent: parent ← parent ⋉ child.</li>
+  <li>If root empty → answer ∅ (no match). Else for boolean CQ → YES.</li>
+  <li><b>Down-pass</b> (for full answer): semi-join parent into child top-down → all relations now contain only "useful" tuples.</li>
+  <li>Compute the join along the tree; project onto head vars.</li>
+</ol>
+</div>
+<p><span class="key">Acyclic CQ evaluation: O(‖D‖·‖Q‖)</span> — linear time. Bounded treewidth / hypertree-width generalises to tractable cyclic classes.</p>
+</section>
+
+<section>
+<h2 class="teal">Parallel &amp; Distributed DBMS</h2>
+<table>
+  <tr><th>Arch</th><th>Shares</th><th>Notes</th></tr>
+  <tr><td>Shared Memory</td><td>Mem+Disk</td><td>Easy SW, costly HW, limited scale</td></tr>
+  <tr><td>Shared Disk</td><td>Disk</td><td>Middle ground; consistency easier</td></tr>
+  <tr><td>Shared Nothing</td><td>—</td><td>Cheap, scales, harder SW</td></tr>
+</table>
+<h3>Parallelism</h3>
+<ul class="compact">
+  <li><b>Inter-query</b>: throughput.</li>
+  <li><b>Intra-query inter-op</b>: pipeline + bushy.</li>
+  <li><b>Intra-query intra-op</b>: data partition + per-partition op.</li>
+</ul>
+<h3>Partitioning</h3>
+<ul class="compact">
+  <li><b>Round-robin</b>: even load, no locality.</li>
+  <li><b>Hash(A)</b>: equality lookup on A, equi-join on A, group-by A — local.</li>
+  <li><b>Range(A)</b>: range queries + above.</li>
+</ul>
+<div class="recipe">
+<b>Distributed query plan (decision tree).</b>
+<ol class="compact">
+  <li>Selection on partition key → only relevant nodes; else broadcast or all-nodes.</li>
+  <li>GROUP BY g — if partitioned on g: local agg, no shuffle. Else: local partial agg → reshuffle by g → final agg.</li>
+  <li>MAX/SUM/COUNT: <i>distributive</i> → local + final aggregate.</li>
+  <li>Join R⋈<sub>A</sub>S: see scenarios below.</li>
+</ol>
+</div>
+<h3>Distributed Join Scenarios</h3>
+<ol class="compact">
+  <li>One side replicated everywhere → local join.</li>
+  <li>Both partitioned on join key → local join.</li>
+  <li>Different keys, one side small → broadcast small side.</li>
+  <li>Different keys, both large → reshuffle both on join key.</li>
+</ol>
+<h3>Parallel Hash Join Cost</h3>
+<p>Round-robin start, k machines, R+S total: shuffle reads/writes = 2(M+N)/k per machine; rebuild = (M+N)/k. Total cross-network ≈ (M+N)·page_size·(k−1)/k. With combined partition+phase1: 3(M+N)/k disk I/Os per machine.</p>
+<h3>Parallel SMJ (range-partitioned same)</h3>
+<p>Local sort + merge: per machine 3·(M+N)/k if refined SMJ applies.</p>
+</section>
+
+<section>
+<h2 class="orange">NoSQL</h2>
+<p>Web-scale needs horizontal scale; 2PC blocking; strong consistency expensive.</p>
+<h3>CAP &amp; BASE</h3>
+<p><b>CAP</b>: Consistency · Availability · Partition tolerance — pick 2. <b>BASE</b>: Basically Available, Soft state, Eventually consistent.</p>
+<table>
+  <tr><th>Type</th><th>Model</th><th>Eg</th></tr>
+  <tr><td>Key-Value</td><td>(k,v); v opaque</td><td>Redis, DynamoDB</td></tr>
+  <tr><td>Document</td><td>JSON/BSON queryable</td><td>Mongo, CouchDB</td></tr>
+  <tr><td>Column-Family</td><td>Wide rows / families</td><td>Cassandra, HBase</td></tr>
+  <tr><td>Graph</td><td>Nodes &amp; edges</td><td>Neo4j, Neptune</td></tr>
+</table>
+<p><b>SQL</b>: ACID, joins, stable schema. <b>NoSQL</b>: scale, throughput, flexible schema. Lines blur (PG JSON, Mongo ACID).</p>
+</section>
+
+<section>
+<h2 class="pink">Optimistic CC &amp; Hashing Recap</h2>
+<h3>Optimistic CC (3 phases)</h3>
+<p><b>Read</b> (private workspace) → <b>Validate</b> (check no conflict with concurrently-committed) → <b>Write</b>. No locks during read. Aborts costly under contention; great when conflicts rare.</p>
+<h3>View ⊋ Conflict — example</h3>
+<p>S = W₁(A) W₂(A) W₃(A) — all blind writes on A. S is view-equiv to T₁T₂T₃ but adding any reads can break conflict-equiv. View-serializable but not conflict-serializable.</p>
+<h3>Static-hash search costs (skewed function)</h3>
+<p>Uniform hp over [0,B−1]: each bucket = N/B records, search = ⌈N/(B·R)⌉ I/Os always.<br/>Skewed h<sub>d</sub>(k) = #digits(k): bucket sizes = digit-count distribution. Min I/O = bucket with fewest keys; Max I/O = largest bucket; Expected = Σ p(bucket) · I/O(bucket).</p>
+</section>
+
+<section>
+<h2 class="slate">Key Formulas — Quick Reference</h2>
+<p class="formula">Ext sort: passes = 1+⌈log<sub>B−1</sub>⌈N/B⌉⌉; cost = 2N · passes</p>
+<p class="formula">Block NLJ: M + ⌈M/(B−2)⌉·N</p>
+<p class="formula">Grace Hash / refined SMJ: 3(M+N)</p>
+<p class="formula">B+ tree height ≈ log<sub>F</sub>(N), F ≈ 133 typical</p>
+<p class="formula">B+ min entries (h≥1): (d+1)<sup>h</sup>·d</p>
+<p class="formula">B+ max entries (h): (2d+1)<sup>h</sup>·2d</p>
+<p class="formula">Ext hash: max table = B(B−1); need B&gt;√(f·N)</p>
+<p class="formula">Join size: |R|·|S|/max{NKeys(R.A),NKeys(S.A)}</p>
+<p class="formula">FK join: |out| = |many-side|</p>
+<p class="formula">σ<sub>A=c</sub>: sel = 1/NKeys(A)</p>
+<p class="formula">Acyclic CQ eval: O(‖D‖·‖Q‖) — Yannakakis</p>
+<p class="formula">CQ containment: ∃ hom Q₂→Q₁  ⟺  Q₁ ⊆ Q₂</p>
+<p class="formula">Catalan C<sub>n−1</sub> = (2n−2)!/(n!(n−1)!)</p>
+<p class="formula">Total bushy plans on n rels: n!·C<sub>n−1</sub></p>
+</section>
+
+<section>
+<h2 class="slate">Last-Minute Exam Reminders</h2>
+<ul class="compact">
+  <li>Always simplify NOT (De Morgan) before reading a histogram.</li>
+  <li>FK join with non-null FK ⇒ output = |child|. Don't multiply.</li>
+  <li>Materialisation: add output-page write/read at every non-leaf.</li>
+  <li>SMJ refinement only valid if Pass-0 runs ≤ B−1.</li>
+  <li>BNLJ: smaller relation as outer, B−2 buffers per chunk.</li>
+  <li>2PL ⇏ Strict 2PL: cascading aborts allowed in plain 2PL.</li>
+  <li>Wait-Die / Wound-Wait avoid all deadlocks but abort unnecessarily (false positives).</li>
+  <li>CLRs are <i>never</i> undone.</li>
+  <li>2PC is blocking on single failure; presumed-abort if no log.</li>
+  <li>GYO removes ear-tip vertex OR contained hyperedge each round — both rules needed.</li>
+  <li>To prove cyclic: show GYO stalls with ≥1 hyperedge; or exhibit a "Berge cycle".</li>
+  <li>Q minimal ⇏ shortest body — minimal means no atom removable by query hom.</li>
+</ul>
+</section>
+
+</div>
+</body>
+</html>

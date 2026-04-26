@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pdftoppm -r 200 cheatsheet_compressed_optimized.pdf /tmp/adbsv -png)",
+      "Bash(weasyprint cheatsheet_compressed_optimized.html cheatsheet_compressed_optimized.pdf)",
+      "Bash(pdfinfo cheatsheet_compressed_optimized.pdf)",
+      "Bash(pdftoppm -r 200 cheatsheet_compressed_optimized.pdf /tmp/adbs2 -png)",
+      "Bash(pdftoppm *)"
+    ]
+  }
+}
