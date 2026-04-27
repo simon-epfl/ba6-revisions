@@ -570,69 +570,143 @@
 </section>
 
 <section>
-<h2 class="orange">Conjunctive Queries (CQs)</h2>
-<p>CQ = {σ, π, ⋈}-fragment = ∃-∧ fragment of FO = simple SELECT-FROM-WHERE with AND + equalities.</p>
-<p class="formula">Q(x̄) :- R₁(v̄₁), …, R<sub>m</sub>(v̄<sub>m</sub>)</p>
-<p>x̄ = head/distinguished vars (must each appear in body).</p>
-<h3>Semantics — Match / Homomorphism</h3>
-<p>h: vars(Q) → terms(D), <b>identity on constants</b>, with h(R<sub>i</sub>(v̄<sub>i</sub>)) ∈ D for all i. Output tuple = (h(x̄)). Q(D) = set of all such tuples.</p>
-<div class="recipe">
-<b>Compute Q(D) by hand.</b>
-<ol class="compact">
-  <li>List atoms; pin every constant.</li>
-  <li>For one atom at a time, enumerate D-tuples that <i>match the atom's pattern</i> (constants and same-var equalities).</li>
-  <li>Take the join of partial homomorphisms over shared vars.</li>
-  <li>Project onto head vars.</li>
-</ol>
-</div>
-<h3>Complexity</h3>
-<table>
-  <tr><th>Problem</th><th>Complexity</th></tr>
-  <tr><td>Eval combined</td><td class="key">NP-complete</td></tr>
-  <tr><td>Eval data</td><td>PTIME, ‖D‖<sup>O(‖Q‖)</sup></td></tr>
-  <tr><td>Satisfiability</td><td>Trivial (canonical DB)</td></tr>
-  <tr><td>Containment / Equiv</td><td>NP-complete</td></tr>
-</table>
-<h3>Homomorphism Theorem</h3>
-<p><b>Q₁ ⊆ Q₂ ⟺ ∃ query hom h: Q₂ → Q₁</b> (i.e. h(body(Q₂)) ⊆ body(Q₁) and h(head(Q₂)) = head(Q₁)).</p>
-<p><b>UCQ containment</b>: U={Q₁..Q<sub>n</sub>} ⊆ U'={Q'₁..Q'<sub>m</sub>} ⟺ ∀i ∃j Q<sub>i</sub> ⊆ Q'<sub>j</sub>. (⇐) trivial. (⇒) use canonical DB D<sub>Qi</sub> for each Q<sub>i</sub>; freeze head as constants; the head tuple is in U(D<sub>Qi</sub>) ⊆ U'(D<sub>Qi</sub>) so some Q'<sub>j</sub>(D<sub>Qi</sub>) returns it ⇒ hom Q'<sub>j</sub>→Q<sub>i</sub>.</p>
-<div class="recipe">
-<b>Minimisation (compute the core).</b>
-<ol class="compact">
-  <li>For each atom α in body, try to find query hom h: Q → Q\{α} (identity on head vars / constants).</li>
-  <li>If yes, drop α and repeat from start.</li>
-  <li>Else keep α.</li>
-  <li>Result is unique up to var renaming = the <b>core</b>.</li>
-</ol>
-</div>
-<p class="smallnote">Tip: atoms with ≥1 unique variable not appearing elsewhere can never be removed — they witness an existential not derivable from others.</p>
+<h2 class="orange">Sort-Merge Join — Algorithm</h2>
+<p>Equi-join R(A,..) ⋈<sub>A</sub> S(A,..). Cost: sort(R)+sort(S)+M+N (no dups on join key); refined to <b>3(M+N)</b> if Pass-0 produces ≤ B−1 runs total.</p>
+<p class="formula">sort R on A; sort S on A
+i ← 0; j ← 0
+while i &lt; |R| and j &lt; |S|:
+  if R[i].A &lt; S[j].A: i++
+  elif R[i].A &gt; S[j].A: j++
+  else:                     // equal key
+    js ← j
+    while j &lt; |S| and S[j].A == R[i].A:
+      output ⟨R[i], S[j]⟩
+      j++
+    j ← js                  // rewind for next R
+    i++
+    if i &lt; |R| and R[i].A == R[i−1].A: continue
+    else: while j &lt; |S| and S[j].A == R[i−1].A: j++</p>
+<h3>Outer / Anti variants</h3>
+<ul class="compact">
+  <li><b>Left outer</b>: when R[i].A &lt; S[j].A, emit ⟨R[i], NULL⟩ before i++.</li>
+  <li><b>Full outer</b>: also emit ⟨NULL, S[j]⟩ when R[i].A &gt; S[j].A.</li>
+  <li><b>Left anti</b>: emit R[i] only when R[i].A &lt; S[j].A; never emit on equal.</li>
+</ul>
 </section>
 
 <section>
-<h2 class="orange">Acyclic CQs &amp; Yannakakis</h2>
-<p><b>Hypergraph H(Q)</b>: nodes = vars; hyperedges = atoms (set of vars in atom; constants ignored or kept as singletons).</p>
-<h3>Acyclicity (α-acyclic)</h3>
-<p>H acyclic ⟺ ∃ <b>join tree</b> T: nodes labelled by hyperedges; for every var v, the set of nodes whose label contains v forms a connected subtree. (a.k.a. running-intersection property)</p>
-<div class="recipe">
-<b>GYO Reduction (test acyclicity).</b>
+<h2 class="orange">External Merge Sort — Algorithm</h2>
+<p>N pages, B buffer pages.</p>
+<p class="formula">// Pass 0 — create runs
+for chunk in read(file, B pages each):
+    sort chunk in memory; write as run
+// Passes 1+ — merge B−1 runs at a time
+while #runs &gt; 1:
+    pick B−1 runs; open one input page per run + 1 output
+    repeat:
+        from those B−1 input pages, pick smallest record
+        write to output; advance the input it came from
+        refill an input page when exhausted
+    until all B−1 runs consumed
+    flush output as a new (longer) run</p>
+<p>Passes = 1+⌈log<sub>B−1</sub>⌈N/B⌉⌉. I/O = 2N·passes. <b>Blocked I/O</b>: read/write b pages at a time; merges ⌊(B−b)/b⌋ runs/pass.</p>
+<p class="smallnote">Refined SMJ: skip the <i>last</i> merge of each sort and merge R-runs and S-runs together while joining → 3(M+N).</p>
+</section>
+
+<section>
+<h2 class="orange">Block NLJ — Algorithm</h2>
+<p>R outer (M pages), S inner (N pages), B buffers.</p>
+<p class="formula">for each chunk of B−2 pages of R:
+    load chunk into memory hash/sorted struct
+    for each page p of S:
+        for each tuple t in p:
+            for each match m in chunk where m.A==t.A:
+                output ⟨m, t⟩</p>
+<p>I/O = M + ⌈M/(B−2)⌉·N. Pick smaller relation as outer.</p>
+<h3>3-way BNLJ (R, S, T same key)</h3>
+<p>Outer R uses P pages; load it once. Allocate ⌊(B−1−P)/2⌋ inner pages each to S and T. For each outer chunk, scan S and T fully. Cost ≈ N + ⌈N/P⌉·N + ⌈N/P⌉·⌈P/(B−1−P)⌉·N. Optimum P balances inner rescans.</p>
+</section>
+
+<section>
+<h2 class="orange">Grace Hash Join — Algorithm</h2>
+<p class="formula">// Phase 1 — partition with h_p
+for r in R:  write r to bucket h_p(r.A) of R-side
+for s in S:  write s to bucket h_p(s.A) of S-side
+// Phase 2 — per-bucket join with h_r ≠ h_p
+for each bucket i:
+    build hash table of R-bucket[i] using h_r
+    for s in S-bucket[i]:
+        for r in HT[h_r(s.A)] where r.A==s.A:
+            output ⟨r, s⟩
+    if a bucket overflows memory → recurse with h_r as new h_p</p>
+<p>Cost = 3(M+N) (read+write each side once for partitioning, then read once for build/probe). <b>Hash full outer</b>: mark matched HT entries during probe; emit unmatched HT entries with NULL after; emit unmatched probe rows with NULL as you go.</p>
+</section>
+
+<section>
+<h2 class="red">ARIES — Worked Log Walkthrough</h2>
+<p class="smallnote">Pages flushed up to LSN 50; log starts at 60.</p>
+<table>
+  <tr><th>LSN</th><th>T</th><th>Type</th><th>Page</th><th>prev</th></tr>
+  <tr><td>60</td><td>T1</td><td>BEGIN</td><td>—</td><td>nil</td></tr>
+  <tr><td>70</td><td>T1</td><td>UPD</td><td>P2</td><td>60</td></tr>
+  <tr><td>80</td><td>T2</td><td>UPD</td><td>P3</td><td>40</td></tr>
+  <tr><td>90/100</td><td>—</td><td>BEGIN/END_CKPT</td><td>—</td><td>—</td></tr>
+  <tr><td>110</td><td>T2</td><td>UPD</td><td>P1</td><td>80</td></tr>
+  <tr><td>120</td><td>T1</td><td>UPD</td><td>P3</td><td>70</td></tr>
+  <tr><td>130</td><td>T3</td><td>BEGIN</td><td>—</td><td>nil</td></tr>
+  <tr><td>140</td><td>T3</td><td>UPD</td><td>P1</td><td>130</td></tr>
+  <tr><td>150</td><td>T1</td><td>ABORT</td><td>—</td><td>120</td></tr>
+  <tr><td>160</td><td>T1</td><td>CLR(120)</td><td>P3</td><td>150</td></tr>
+  <tr><td>170</td><td>T2</td><td>COMMIT</td><td>—</td><td>110</td></tr>
+</table>
+<h3>END_CHECKPOINT (LSN 100)</h3>
+<p><b>ATT</b>: {T1:70, T2:80}. <b>DPT</b>: {P2→70, P3→80}.</p>
+<h3>After Analysis</h3>
+<p><b>ATT</b>: {T1:160 (status=U after 150), T2:170 (status=C), T3:140 (U)}. <b>DPT</b>: {P2→70, P3→80, P1→110}.</p>
+<h3>Redo from minRecLSN = 70</h3>
+<p>Replay every UPDATE/CLR with LSN ≥ recLSN(page) and pageLSN &lt; LSN.</p>
+<h3>Undo (losers = T1, T3, in reverse LSN order)</h3>
+<p>ToUndo = {160, 140}. T1's chain at 160 is a CLR — skip; follow undoNextLSN=70 → undo 70: write CLR(70, undoNext=nil), then write END for T1. T3's chain at 140 → undo: write CLR(140, undoNext=nil), then END for T3. Drop T2 (committed). Final new log: CLR(70), END(T1), CLR(140), END(T3).</p>
+</section>
+
+<section>
+<h2 class="red">2PC — Worked Timing</h2>
+<p class="smallnote">5 nodes; coord = 5; rtt 5↔1=550, 5↔2=500, 5↔3=600, 5↔4=520. Each log flush = 20ms.</p>
 <ol class="compact">
-  <li>Eliminate any vertex contained in ≤1 hyperedge (called an <i>ear</i> tip).</li>
-  <li>Eliminate any hyperedge that is empty or contained in another.</li>
-  <li>Repeat until nothing changes.</li>
-  <li><b>∅ ⇒ acyclic</b> (build join tree from elimination order, reverse). Otherwise <b>not acyclic</b>; surviving hypergraph witnesses cyclicity (often a 3-cycle of hyperedges sharing pairwise vars).</li>
+  <li><b>t=0</b>: coord flushes PREPARE → done at <b>20</b>; broadcasts.</li>
+  <li>Slowest part is N3 (600ms each way). N3 receives at 620, flushes PREPARE 620→640, sends YES at 640, arrives at coord at 1240.</li>
+  <li>Coord has all YES at <b>1240</b>; flushes COMMIT 1240→1260; broadcasts.</li>
+  <li>N3 receives COMMIT at 1860, flushes 1860→1880, sends ACK at 1880, arrives coord at <b>2480</b>.</li>
+  <li>Coord flushes END 2480→<b>2500</b>. <span class="key">Total = 2500ms.</span></li>
 </ol>
-</div>
-<div class="recipe">
-<b>Yannakakis (eval acyclic CQ).</b>
+<p><b>Crash of N3 at 1800, recovery 2000</b>: at recovery N3 sees PREPARE only → asks coord; coord still has COMMIT in log; resends COMMIT to N3, which flushes + ACKs. Coord finishes at 2000 + 600 (deliver) + 20 (flush at N3) + 600 (ACK back) + 20 (END) = <b>3240ms</b>.</p>
+<p><b>Crash of coord</b>: on recovery reads log; if COMMIT present → rerun phase 2 (re-broadcast); if only PREPARE → can presumed-abort (or rerun PREPARE). Participants stuck in PREPARE state must wait → 2PC is <b>blocking</b>.</p>
+</section>
+
+<section>
+<h2 class="blue">B+ Tree Split — Worked Example</h2>
+<p class="smallnote">Order d=2, "new right gets larger half", insert into a full leaf splits.</p>
+<p>Insert 30 into leaf [18,27,29] of a tree where parent has separators [9,18,32,45]. Leaf overflows → new right leaf [29,30] (larger half), left keeps [18,27]. <b>Copy up</b> 29 to parent. If parent was full, parent splits: <b>push up</b> middle key (one position higher). For order d=2 inner node holds 2..4 keys; splitting 5 keys → keep 2 left, push middle, give 2 to right.</p>
+<h3>Min/Max bounds (order d, height h)</h3>
+<p>Min entries (h≥1): root has 1 key → 2 children → each minimal subtree of height h−1 has (d+1)<sup>h−1</sup>·d entries → <b>(d+1)<sup>h</sup>·d / (d+1)·... ≈ 2·(d+1)<sup>h−1</sup>·d</b>. Max: full tree = (2d+1)<sup>h</sup>·2d.</p>
+<p><b>2024 Q3 example</b> (d=3): smallest N forcing h=2 = 2·(2d+1)·d+1 = 2·7·3+1 = <b>43</b>. Largest N at h=2 = (2d+1)<sup>2</sup>·2d = 49·6 = <b>294</b>.</p>
+</section>
+
+<section>
+<h2 class="red">Conflict Graph — Worked Example</h2>
+<p>S = ⟨R₃(B), R₁(A), W₁(B), R₂(B), R₂(A), W₃(A)⟩</p>
 <ol class="compact">
-  <li>Build join tree T; root anywhere.</li>
-  <li><b>Up-pass</b>: for each leaf-to-root edge, semi-join child into parent: parent ← parent ⋉ child.</li>
-  <li>If root empty → answer ∅ (no match). Else for boolean CQ → YES.</li>
-  <li><b>Down-pass</b> (for full answer): semi-join parent into child top-down → all relations now contain only "useful" tuples.</li>
-  <li>Compute the join along the tree; project onto head vars.</li>
+  <li>List conflicts (same obj, ≥1 W, different txn):
+    <ul class="compact">
+      <li>R₃(B) — W₁(B): edge T₃→T₁.</li>
+      <li>W₁(B) — R₂(B): edge T₁→T₂.</li>
+      <li>R₂(A) — W₃(A): edge T₂→T₃.</li>
+      <li>R₁(A) — W₃(A): edge T₁→T₃.</li>
+    </ul>
+  </li>
+  <li>Graph: T₁→T₂→T₃→T₁ — <b>cycle</b> ⇒ not conflict-serializable.</li>
+  <li>Remove R₂(B) (or W₃(A)) breaks the cycle. Topological sort of resulting DAG gives a serial equivalent.</li>
 </ol>
-</div>
-<p><span class="key">Acyclic CQ evaluation: O(‖D‖·‖Q‖)</span> — linear time. Bounded treewidth / hypertree-width generalises to tractable cyclic classes.</p>
 </section>
 
 <section>
@@ -693,13 +767,22 @@
 </section>
 
 <section>
-<h2 class="pink">Optimistic CC &amp; Hashing Recap</h2>
-<h3>Optimistic CC (3 phases)</h3>
-<p><b>Read</b> (private workspace) → <b>Validate</b> (check no conflict with concurrently-committed) → <b>Write</b>. No locks during read. Aborts costly under contention; great when conflicts rare.</p>
+<h2 class="pink">Extendible Hashing — Worked Example</h2>
+<p>Bucket size 2, start global depth g=1, dir [0,1].</p>
+<p>Insert h(k): take last g bits to find dir slot, follow ptr to bucket. If bucket full and local d&lt;g: split bucket only (rehash entries by next bit), local d++. If d=g: <b>double directory</b> (g++); each old slot duplicated; split overflow bucket; rehash.</p>
+<h3>Search / Insert</h3>
+<p>Always <b>1 I/O</b> for the bucket (directory in memory). On split: read bucket + write 2 new buckets. Directory doubling is in-memory pointer copy.</p>
+<h3>Static hash skew (2021 Q3c)</h3>
+<p>Uniform h<sub>p</sub> over [0,19], 100·100=10000 records → 500/bucket = 5 pages → I/O ∈ [1,5], expected ≈ 3.</p>
+<p>Skewed h<sub>d</sub>(k)=#digits in [0,9999] → 4 buckets: 1-digit:10, 2:90, 3:900, 4:9000 records. Pages per bucket ≈ ⌈n/100⌉. Min I/O=1; Max I/O=⌈9000/100⌉/2=45; Expected = Σ (n<sub>i</sub>/N)·(½ chain length).</p>
+</section>
+
+<section>
+<h2 class="pink">Optimistic CC &amp; View vs Conflict</h2>
+<h3>OCC — 3 Phases</h3>
+<p><b>Read</b> (private workspace, no locks) → <b>Validate</b> (check no R/W or W/W conflict with overlapping committed txns) → <b>Write</b> (apply). Great when conflicts rare; aborts expensive under contention.</p>
 <h3>View ⊋ Conflict — example</h3>
-<p>S = W₁(A) W₂(A) W₃(A) — all blind writes on A. S is view-equiv to T₁T₂T₃ but adding any reads can break conflict-equiv. View-serializable but not conflict-serializable.</p>
-<h3>Static-hash search costs (skewed function)</h3>
-<p>Uniform hp over [0,B−1]: each bucket = N/B records, search = ⌈N/(B·R)⌉ I/Os always.<br/>Skewed h<sub>d</sub>(k) = #digits(k): bucket sizes = digit-count distribution. Min I/O = bucket with fewest keys; Max I/O = largest bucket; Expected = Σ p(bucket) · I/O(bucket).</p>
+<p>S = W₁(A), W₂(A), R₃(A), W₃(A). All initial &amp; final writes preserved → view-equivalent to T₁T₂T₃. But blind writes can be reordered without conflict-equivalence — gives a view-ser but not conflict-ser schedule.</p>
 </section>
 
 <section>
@@ -714,10 +797,8 @@
 <p class="formula">Join size: |R|·|S|/max{NKeys(R.A),NKeys(S.A)}</p>
 <p class="formula">FK join: |out| = |many-side|</p>
 <p class="formula">σ<sub>A=c</sub>: sel = 1/NKeys(A)</p>
-<p class="formula">Acyclic CQ eval: O(‖D‖·‖Q‖) — Yannakakis</p>
-<p class="formula">CQ containment: ∃ hom Q₂→Q₁  ⟺  Q₁ ⊆ Q₂</p>
-<p class="formula">Catalan C<sub>n−1</sub> = (2n−2)!/(n!(n−1)!)</p>
-<p class="formula">Total bushy plans on n rels: n!·C<sub>n−1</sub></p>
+<p class="formula">2PC successful = flush+rtt+flush+rtt+flush (slowest part)</p>
+<p class="formula">Catalan C<sub>n−1</sub> = (2n−2)!/(n!(n−1)!); bushy plans on n: n!·C<sub>n−1</sub></p>
 </section>
 
 <section>
