@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>COMN Cheatsheet — INFR09027</title>
+<style>
+  @page { size: A4; margin: 6mm; }
+  html { font-size: 7.2pt; }
+  body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; line-height: 1.18; color: #111; margin: 0; }
+  .page { width: 100%; column-count: 3; column-gap: 4mm; column-fill: balance; overflow: hidden; }
+  .page + .page { page-break-before: always; }
+  .ptitle { font-size: 1.21rem; font-weight: 800; letter-spacing: .3px; column-span: all; margin: 0 0 1mm 0; padding-bottom: .5mm; border-bottom: 1.2px solid #222; text-transform: uppercase; }
+  section { margin: 0 0 1.4mm 0; padding: 0; }
+  h2, h3, h4 { margin: .6mm 0 .4mm 0; break-after: avoid; break-inside: avoid; }
+  table, tr { break-inside: avoid; }
+  h2 { font-size: 1.08rem; padding: .4mm 1mm; border-radius: 1px; color: #fff; }
+  h2.blue   { background: #1f4f8a; }
+  h2.purple { background: #5b3a86; }
+  h2.green  { background: #2e6b3e; }
+  h2.red    { background: #8a2f2f; }
+  h2.teal   { background: #1f6a72; }
+  h2.orange { background: #a35b1f; }
+  h2.slate  { background: #444; }
+  h3 { font-size: 1.02rem; color: #222; border-bottom: .5px dotted #888; }
+  h4 { font-size: 0.97rem; color: #333; }
+  p, ul, ol { margin: .3mm 0 .6mm 0; }
+  ul, ol { padding-left: 3mm; }
+  li { margin: 0; }
+  code, .mono { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.92rem; background: #eee; padding: 0 .3mm; border-radius: 1px; }
+  pre { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.88rem; background: #f3f3f3; padding: .5mm 1mm; margin: .3mm 0; white-space: pre-wrap; border-left: 1px solid #aaa; }
+  table { font-size: 0.92rem; border-collapse: collapse; width: 100%; margin: .3mm 0; }
+  th, td { border: .5px solid #aaa; padding: .3mm .6mm; text-align: left; vertical-align: top; }
+  th { background: #ddd; }
+  .smallnote { font-size: 0.92rem; color: #555; }
+  .vs { font-size: 0.86rem; color: #444; }
+  .kbd { border: .5px solid #888; border-radius: 1px; padding: 0 .4mm; font-family: monospace; font-size: 0.88rem; background: #fafafa; }
+  .formula { font-style: italic; }
+  b, strong { color: #000; }
+  .tag { display: inline-block; font-size: 0.86rem; background: #222; color: #fff; padding: 0 .6mm; border-radius: 1px; margin-right: .4mm; }
+</style>
+</head>
+<body>
+
+<!-- ============ PAGE 1 ============ -->
+<div class="page">
+<div class="ptitle">COMN · Overview · Application · Transport</div>
+
+<section>
+<h2 class="blue">Internet & Layers</h2>
+<ul>
+<li><b>Hosts/edge</b>: end systems run apps. <b>Core</b>: routers, links. <b>Access</b>: DSL, cable, FTTH, cellular, WiFi.</li>
+<li><b>Packet switching</b>: store-and-forward, statistical mux, no setup, may queue/drop. <b>Circuit switching</b>: reserved BW (FDM/TDM), guaranteed rate, idle waste.</li>
+<li><b>Why packet wins</b>: bursty traffic → high utilisation. Ex: 1Gbps link, 100Mbps users at 10% duty → packet supports many more users than CS.</li>
+<li><b>5-layer stack</b> (TCP/IP): Application · Transport · Network · Link · Physical. OSI adds Session, Presentation.</li>
+<li><b>Encapsulation</b>: each layer prepends header. msg→seg→datagram→frame→bits.</li>
+<li><b>Standards bodies</b>: IETF (RFCs/TCP-IP), ISO (OSI), IEEE 802 (LAN/WiFi), W3C (web).</li>
+</ul>
+</section>
+
+<section>
+<h2 class="blue">Delay & Throughput</h2>
+<p><b>Nodal delay</b> = d<sub>proc</sub> + d<sub>queue</sub> + d<sub>trans</sub> + d<sub>prop</sub></p>
+<ul>
+<li>d<sub>trans</sub> = L/R (packet L bits, link rate R bps)</li>
+<li>d<sub>prop</sub> = d/s (link length / signal speed ≈ 2·10⁸ m/s)</li>
+<li>Queueing: traffic intensity a = La/R; →1 ⇒ delay blows up.</li>
+<li><b>End-to-end</b> through N store-and-forward links of rate R: t = (N·L)/R (+propagation).</li>
+<li><b>Throughput</b>: min(R<sub>s</sub>, R<sub>c</sub>, R/N) bottleneck link.</li>
+<li><b>Bandwidth-delay product</b>: max bits "in flight" = R·RTT.</li>
+</ul>
+<p class="smallnote">Ex: 350MB over 2Mbps = 8·350·10⁶/(2·10⁶) = 1400 s. Throughput ≈ 2Mbps. Prop (100ms RTT) negligible vs transfer.</p>
+</section>
+
+<section>
+<h2 class="blue">P2P Distribution Time</h2>
+<p>File F to N peers. Server upload u<sub>s</sub>, peer up u<sub>i</sub>, down d<sub>i</sub>.</p>
+<ul>
+<li><b>Client–server</b>: D<sub>cs</sub> = max( N·F/u<sub>s</sub>, F/min(d<sub>i</sub>) )</li>
+<li><b>P2P</b>: D<sub>p2p</sub> = max( F/u<sub>s</sub>, F/min(d<sub>i</sub>), N·F / (u<sub>s</sub>+Σu<sub>i</sub>) )</li>
+<li>P2P scales with N; CS grows linearly with N.</li>
+<li><b>BitTorrent</b>: torrent file, tracker, chunks (256KB), rarest-first, tit-for-tat unchoke (top-4 + optimistic).</li>
+</ul>
+</section>
+
+<section>
+<h2 class="blue">HTTP</h2>
+<ul>
+<li>TCP port <b>80</b> (HTTPS 443). Stateless. Request: method URL HTTP/1.1, headers, body.</li>
+<li><b>Methods</b>: GET, POST, HEAD, PUT, DELETE, OPTIONS.</li>
+<li><b>Status</b>: 1xx info · 2xx OK (200) · 3xx redirect (301, 304 Not Modified) · 4xx client (400, 404) · 5xx server (500, 503).</li>
+<li><b>Non-persistent</b>: 1 obj/TCP = 2 RTT + transmit. <b>Persistent</b> (HTTP/1.1, default): reuse TCP. <b>Pipelining</b>: multiple req without waiting.</li>
+<li><b>Cookies</b>: Set-Cookie ↔ Cookie header; identifies stateful sessions over stateless HTTP.</li>
+<li><b>Conditional GET</b>: <code>If-Modified-Since</code> → 304 if cached copy fresh.</li>
+<li><b>Caches/proxies</b>: cut response time & WAN traffic. CDN: place content near edge.</li>
+<li>HTTP/2 binary, multiplexed streams. HTTP/3 over QUIC/UDP.</li>
+</ul>
+</section>
+
+<section>
+<h2 class="blue">DNS</h2>
+<ul>
+<li>Port <b>53</b>, mostly UDP. Hierarchical: root → TLD (.uk, .com) → authoritative.</li>
+<li><b>Queries</b>: recursive (local resolver does work) vs iterative (referral chain).</li>
+<li><b>Records</b>: A (IPv4), AAAA (IPv6), NS (name server), CNAME (alias), MX (mail), PTR (reverse), TXT.</li>
+<li>Caching with TTL at local DNS; reduces load on root/TLD.</li>
+<li>DNS used for CDN redirection (return nearest server's IP).</li>
+</ul>
+</section>
+
+<section>
+<h2 class="purple">Email & Other App</h2>
+<ul>
+<li><b>SMTP</b> 25 (push, ASCII, persistent). <b>POP3</b> 110, <b>IMAP</b> 143 (server-side state).</li>
+<li><b>FTP</b>: control 21 (persistent), data 20 (new conn/file). Out-of-band control.</li>
+<li><b>Streaming</b>: <b>DASH</b> — server splits video into chunks at multiple rates; client picks rate per chunk based on measured bandwidth.</li>
+</ul>
+</section>
+
+<section>
+<h2 class="purple">Sockets (Python)</h2>
+<pre>TCP server
+s=socket(AF_INET,SOCK_STREAM)
+s.bind((host,port)); s.listen(1)
+c,addr=s.accept(); c.recv(1024); c.send(d)
+TCP client
+s=socket(AF_INET,SOCK_STREAM)
+s.connect((h,p)); s.send(d); s.recv(1024)
+UDP
+s=socket(AF_INET,SOCK_DGRAM)
+s.sendto(d,(h,p));
+d,addr=s.recvfrom(1024)</pre>
+<p class="smallnote">TCP: one socket per client (demux by 4-tuple). UDP: single socket (demux by dst port only).</p>
+</section>
+
+<section>
+<h2 class="green">Transport: UDP vs TCP</h2>
+<table>
+<tr><th>UDP</th><th>TCP</th></tr>
+<tr><td>connectionless</td><td>3-way handshake</td></tr>
+<tr><td>no RDT</td><td>reliable, in-order</td></tr>
+<tr><td>no flow/cong ctrl</td><td>flow + congestion</td></tr>
+<tr><td>8-byte hdr</td><td>20-byte (no opts)</td></tr>
+<tr><td>DNS, RTP, QUIC, games</td><td>HTTP, SMTP, FTP, SSH</td></tr>
+</table>
+<p><b>UDP hdr</b>: src port (16), dst port (16), length (16), checksum (16).</p>
+<p><b>Why UDP?</b> low latency, no setup, no cwnd throttling, multicast, header tiny, app-level control.</p>
+</section>
+
+<section>
+<h2 class="green">Mux / Demux</h2>
+<ul>
+<li><b>UDP</b>: demux by 2-tuple (dst IP, dst port).</li>
+<li><b>TCP</b>: demux by 4-tuple (src IP, src port, dst IP, dst port). Server creates new socket per accepted conn.</li>
+</ul>
+</section>
+
+<section>
+<h2 class="green">Internet Checksum</h2>
+<ol>
+<li>Treat data as 16-bit words.</li>
+<li>Sum with end-around carry (1's complement add).</li>
+<li>Take 1's complement → checksum.</li>
+<li>Receiver: sum all incl. checksum = 0xFFFF if OK.</li>
+</ol>
+<p class="smallnote">Ex 0xf351+0x8040+0x2010+0x1b09 = 0x1AEAA → fold → 0xAEAB; ~ = 0x5154.</p>
+</section>
+
+<section>
+<h2 class="green">Reliable Data Transfer</h2>
+<ul>
+<li><b>rdt1.0</b> perfect channel.</li>
+<li><b>rdt2.0</b> add ACK/NAK + checksum.</li>
+<li><b>rdt2.1/2.2</b> add seq# (1 bit) to detect dup ACKs.</li>
+<li><b>rdt3.0</b> add timer (loss). Stop-and-wait — utilisation U = (L/R)/(RTT+L/R) → tiny.</li>
+<li><b>Pipelining</b>: increase utilisation.</li>
+</ul>
+<table>
+<tr><th></th><th>Go-Back-N</th><th>Sel. Repeat</th></tr>
+<tr><td>ACK</td><td>cumulative</td><td>individual</td></tr>
+<tr><td>retransmit</td><td>from N</td><td>only lost</td></tr>
+<tr><td>buffer rx</td><td>no</td><td>yes</td></tr>
+<tr><td>win ≤</td><td>2<sup>k</sup>−1</td><td>2<sup>k−1</sup></td></tr>
+</table>
+</section>
+
+<section>
+<h2 class="green">TCP</h2>
+<p><b>Header</b> (20B base): src/dst port (16+16), seq# (32, byte-based), ack# (32), data offset (4), flags (URG/ACK/PSH/RST/SYN/FIN), <b>rwnd</b> (16), checksum (16), urg ptr (16), options.</p>
+<p><b>3-way handshake</b>: SYN seq=x → SYN-ACK seq=y ack=x+1 → ACK ack=y+1.</p>
+<p><b>Teardown</b>: FIN → ACK → FIN → ACK (each side closes independently).</p>
+<p><b>Cumulative ACK</b>: ACK n ⇒ all bytes &lt; n received. 3 dup-ACKs ⇒ fast retransmit.</p>
+<p><b>RTT estimation</b>:</p>
+<ul>
+<li>EstRTT = (1−α)·EstRTT + α·SampleRTT; α=0.125</li>
+<li>DevRTT = (1−β)·DevRTT + β·|Sample−Est|; β=0.25</li>
+<li>Timeout = EstRTT + 4·DevRTT (doubled on retransmit)</li>
+</ul>
+<p><b>Flow control</b>: sender keeps unacked ≤ rwnd advertised by receiver.</p>
+</section>
+
+<section>
+<h2 class="green">TCP Congestion Control</h2>
+<ul>
+<li>Effective wnd = min(cwnd, rwnd). LastByteSent − LastByteAcked ≤ wnd.</li>
+<li><b>Slow start</b>: cwnd doubles per RTT (cwnd += MSS per ACK) until ssthresh.</li>
+<li><b>Cong. avoidance</b>: cwnd += MSS·MSS/cwnd per ACK (linear, +1 MSS/RTT). AIMD.</li>
+<li><b>Loss = 3 dup ACKs (TCP Reno)</b>: ssthresh=cwnd/2; cwnd=ssthresh; fast recovery.</li>
+<li><b>Loss = timeout (Tahoe)</b>: ssthresh=cwnd/2; cwnd=1 MSS; slow start.</li>
+<li><b>Throughput</b> ≈ 1.22·MSS/(RTT·√L) for loss rate L.</li>
+<li><b>Fairness</b>: AIMD converges to equal share among TCP flows sharing bottleneck.</li>
+<li><b>QUIC</b>: UDP-based, 0-RTT, per-stream loss (no HoL block at transport), encryption built-in.</li>
+</ul>
+</section>
+
+<section>
+<h2 class="green">Worked Throughput Example</h2>
+<p>350 MB film, 2 Mbps link, RTT 100 ms:</p>
+<ul>
+<li>Bits = 350·10⁶·8 = 2.8·10⁹.</li>
+<li>Tx time = 2.8·10⁹/2·10⁶ = 1400 s ≈ 23 min.</li>
+<li>Throughput ≈ 2 Mbps (bottleneck). RTT adds 100 ms — negligible vs 1400 s.</li>
+</ul>
+<p><b>P2P tabulation</b> (F=10Gb, u<sub>s</sub>=50Mbps, d=2Mbps):</p>
+<table>
+<tr><th>N, u</th><th>CS</th><th>P2P</th></tr>
+<tr><td>10, 0.25M</td><td>2000s</td><td>≈5000s</td></tr>
+<tr><td>10, 0.5M</td><td>2000s</td><td>≈3636s</td></tr>
+<tr><td>100, 0.25M</td><td>20000s</td><td>≈13333s</td></tr>
+<tr><td>100, 0.5M</td><td>20000s</td><td>≈10000s</td></tr>
+</table>
+</section>
+
+<section>
+<h2 class="green">TCP Connection Lifecycle</h2>
+<p><b>State machine</b> (client): CLOSED → SYN_SENT → ESTABLISHED → FIN_WAIT_1 → FIN_WAIT_2 → TIME_WAIT (2·MSL) → CLOSED.</p>
+<p><b>Server</b>: LISTEN → SYN_RCVD → ESTABLISHED → CLOSE_WAIT → LAST_ACK → CLOSED.</p>
+<ul>
+<li>TIME_WAIT prevents stale segs from confusing a new connection on the same 4-tuple.</li>
+<li>Half-close possible: each direction FINs separately.</li>
+</ul>
+</section>
+
+<section>
+<h2 class="green">TCP Sliding Window</h2>
+<ul>
+<li>Sender keeps: SendBase (oldest unacked), NextSeqNum.</li>
+<li>Effective window = min(cwnd, rwnd). Sender may have ≤ window bytes outstanding.</li>
+<li>Cumulative ACK: ACK=n means "all bytes &lt; n received, expecting n next".</li>
+<li>Receiver may buffer out-of-order data and ACK highest in-order byte.</li>
+<li><b>Nagle</b>: coalesce small writes when prior data unacked.</li>
+<li><b>Delayed ACK</b>: receiver waits ≤500 ms to piggyback ACK on data (one ACK per 2 segs typical).</li>
+</ul>
+</section>
+
+<section>
+<h2 class="purple">CDN & Server Selection</h2>
+<ul>
+<li><b>Enter deep</b>: many servers, close to users (Akamai). <b>Bring home</b>: few large centres (Limelight).</li>
+<li>DNS-based redirection: authoritative DNS for CDN returns IP of "best" replica based on requester's local DNS IP (proxy for location), load, RTT.</li>
+<li>Benefits: lower latency, lower origin load, resilience.</li>
+</ul>
+</section>
+
+<section>
+<h2 class="purple">TLS / HTTPS Basics</h2>
+<ul>
+<li>Sits between application and TCP. Port 443.</li>
+<li><b>Handshake</b>: ClientHello (versions, ciphers, random) → ServerHello + cert → key exchange (RSA / DHE / ECDHE) → Finished. TLS 1.3 = 1-RTT (0-RTT resumption).</li>
+<li>Provides: confidentiality (AES-GCM), integrity (HMAC), authentication (X.509 cert chain to CA).</li>
+<li>HTTPS = HTTP over TLS over TCP.</li>
+</ul>
+</section>
+
+</div>
+
+<!-- ============ PAGE 2 ============ -->
+<div class="page">
+<div class="ptitle">COMN · Network · Link · Exam Heuristics</div>
+
+<section>
+<h2 class="orange">IPv4 Datagram</h2>
+<p>Header 20–60B. Fields (bits): Ver (4)=4, IHL (4), TOS/DSCP (8), Total Length (16), ID (16), Flags (3: DF/MF), Frag Offset (13, in 8-byte units), TTL (8), Protocol (8: 6=TCP, 17=UDP, 1=ICMP), Checksum (16), Src IP (32), Dst IP (32), Options.</p>
+<p><b>Fragmentation</b>: by router when MTU smaller; reassembly at destination. IPv6 only sources fragment.</p>
+</section>
+
+<section>
+<h2 class="orange">Addressing & CIDR</h2>
+<ul>
+<li>Dotted decimal /n e.g. 192.168.1.0/24 → 2<sup>32−n</sup> addrs.</li>
+<li><b>Subnet</b> = group of interfaces sharing prefix; reach each other w/o router.</li>
+<li><b>Longest prefix match</b> at forwarding table.</li>
+<li><b>Private</b>: 10/8, 172.16/12, 192.168/16. Loopback 127/8.</li>
+<li><b>NAT</b>: rewrites (src IP, src port) → (public IP, new port); table maps. Cons: breaks end-to-end, hole-punching needed.</li>
+<li><b>DHCP</b> (UDP 67/68) — <b>DORA</b>: Discover (bcast) → Offer → Request → ACK; gives IP, mask, GW, DNS, lease.</li>
+<li><b>IPv6</b>: 128-bit, fixed 40B header, no checksum, no in-router frag, extension headers; transition via dual-stack & tunneling (6-in-4).</li>
+</ul>
+</section>
+
+<section>
+<h2 class="orange">Router & SDN</h2>
+<ul>
+<li>Components: input ports, switch fabric, output ports, routing processor. <b>HoL blocking</b> at input queues.</li>
+<li><b>Forwarding</b> (data plane, ns timescale) vs <b>Routing</b> (control plane, sec).</li>
+<li><b>SDN</b>: logically central controller pushes flow tables. <b>OpenFlow</b>: match (header fields) + action (forward/drop/modify/encap).</li>
+</ul>
+</section>
+
+<section>
+<h2 class="orange">Routing Algorithms</h2>
+<table>
+<tr><th></th><th>Link State</th><th>Distance Vector</th></tr>
+<tr><td>info</td><td>full topology</td><td>only neighbours</td></tr>
+<tr><td>algo</td><td>Dijkstra</td><td>Bellman–Ford</td></tr>
+<tr><td>msg</td><td>flood LSAs</td><td>exchange DV</td></tr>
+<tr><td>complexity</td><td>O(n²) / O(n log n)</td><td>iterative</td></tr>
+<tr><td>issues</td><td>OSPF DR/BDR</td><td>count-to-∞</td></tr>
+</table>
+<p><b>Count-to-∞ fix</b>: split horizon (don't advertise back), poisoned reverse (advertise ∞).</p>
+<p><b>Dijkstra step</b>: pick unvisited node with min D; relax neighbours D(v)=min(D(v), D(u)+c(u,v)).</p>
+</section>
+
+<section>
+<h2 class="orange">Intra/Inter-AS</h2>
+<ul>
+<li><b>Intra-AS</b> (IGP): <b>OSPF</b> (link-state, areas — backbone + area routers, supports hierarchy/auth/multipath), <b>RIP</b> (DV, hop count, max 15, slow).</li>
+<li><b>Inter-AS</b>: <b>BGP</b> over TCP/179. <b>eBGP</b> between ASes, <b>iBGP</b> inside AS. Attributes: <b>AS-PATH</b> (loop detect), <b>NEXT-HOP</b>, <b>LOCAL-PREF</b>, <b>MED</b>.</li>
+<li><b>Hot-potato</b>: pick eBGP exit with smallest intra-AS cost.</li>
+<li>Policy-driven; not shortest-path.</li>
+</ul>
+</section>
+
+<section>
+<h2 class="orange">Hierarchical Routing Sizing</h2>
+<p>n areas, R routers each. Table size at each router ≈ R + (n−1) routes for foreign areas.</p>
+<p class="smallnote">Ex: 1000 routers, 20 areas → 50+19 = 69 entries. Solve 50·k + 19 ≤ 100 → table cap 100 ⇒ max routers/area ≈ (100−n+1). With 20 areas, R≤81 ⇒ total ≤ 1620.</p>
+</section>
+
+<section>
+<h2 class="orange">ICMP</h2>
+<ul>
+<li>Network-layer signalling over IP (proto 1).</li>
+<li>Types: 0 echo reply, 8 echo req (<b>ping</b>); 3 dst unreachable; 11 <b>TTL exceeded</b> (used by <b>traceroute</b>: send UDP with increasing TTL).</li>
+</ul>
+</section>
+
+<section>
+<h2 class="teal">Link Layer Services</h2>
+<ul>
+<li>Framing, link access (MAC), optional reliable delivery & flow ctrl, error detect/correct.</li>
+<li><b>Parity</b>: 1-bit detects single error; <b>2D parity</b> detects+corrects single bit.</li>
+<li><b>CRC</b>: D·2<sup>r</sup> mod G; receiver checks remainder. Detects all burst ≤ r.</li>
+<li><b>Internet checksum</b>: 1's complement; lighter than CRC.</li>
+</ul>
+</section>
+
+<section>
+<h2 class="teal">MAC Protocols</h2>
+<ul>
+<li><b>Channel partition</b>: TDMA, FDMA, CDMA — efficient under load, wasteful idle.</li>
+<li><b>Random access</b>:
+  <ul>
+  <li>ALOHA: efficiency max <b>1/(2e) ≈ 18%</b>; slotted ALOHA <b>1/e ≈ 37%</b>.</li>
+  <li>CSMA: listen before transmit; CSMA/CD: also abort on collision.</li>
+  <li><b>Binary exponential backoff</b>: after n-th collision, wait k slots, k∈{0..2<sup>min(n,10)</sup>−1}.</li>
+  <li>CSMA/CA (WiFi): can't detect collision on radio; uses ACK, RTS/CTS optional.</li>
+  </ul>
+</li>
+<li><b>Taking turns</b>: polling, token passing.</li>
+</ul>
+</section>
+
+<section>
+<h2 class="teal">Ethernet</h2>
+<ul>
+<li>Frame: <b>Preamble</b> 8B (7×0x55 + SFD 0xD5), <b>Dst</b> 6B, <b>Src</b> 6B, <b>Type</b>/Length 2B (0x0800=IPv4, 0x0806=ARP), <b>Payload</b> 46–1500B, <b>CRC</b> 4B. MTU 1500.</li>
+<li>MAC addr 48 bits, globally unique (OUI+NIC). Broadcast FF:FF:FF:FF:FF:FF.</li>
+<li>Half-duplex shared (legacy) uses CSMA/CD; modern switched full-duplex doesn't collide.</li>
+<li>Connectionless, unreliable (no ACK); CRC drops corrupt frames.</li>
+</ul>
+</section>
+
+<section>
+<h2 class="teal">Switches & ARP</h2>
+<ul>
+<li><b>Switch</b>: layer-2, transparent, <b>self-learning</b> — records (src MAC, port, TTL) on each frame; forwards by lookup, floods unknown. Plug-and-play, full-duplex per port, no collisions.</li>
+<li>Host roams: new frame from new port refreshes table → traffic follows.</li>
+<li><b>ARP</b> (within subnet): request broadcast "who has IP X?" → owner replies unicast with MAC. Cached with TTL.</li>
+<li>Off-subnet: send to default gateway's MAC; gateway re-ARPs next hop.</li>
+<li><b>VLANs</b>: partition switch into virtual LANs; 802.1Q tag 4B (VID 12 bits).</li>
+<li><b>Switches vs Routers</b>: switch=L2 plug-and-play, no path optimisation; router=L3, isolates broadcast, runs routing.</li>
+</ul>
+</section>
+
+<section>
+<h2 class="teal">WiFi 802.11 (brief)</h2>
+<ul>
+<li>CSMA/CA + DIFS/SIFS + ACK; RTS/CTS for hidden terminal.</li>
+<li>Frame has 4 addr fields (BSS routing). AP = bridge to wired LAN.</li>
+</ul>
+</section>
+
+<section>
+<h2 class="red">Congestion: Effects & Approaches</h2>
+<ul>
+<li><b>Effects</b>: queue delay ↑, loss/drops, retransmissions waste BW, throughput collapse, fairness loss.</li>
+<li><b>End-end</b> (TCP): infer loss → AIMD.</li>
+<li><b>Network-assisted</b>: ECN bits in IP (RFC 3168), routers mark instead of drop.</li>
+<li>Approaches: avoidance (admission, traffic shaping/leaky-bucket), reaction (AIMD).</li>
+</ul>
+</section>
+
+<section>
+<h2 class="slate">Exam Heuristics</h2>
+<ul>
+<li><b>Throughput Qs</b>: bottleneck = min(R<sub>i</sub>); transfer time = F/bottleneck (+RTT for setup).</li>
+<li><b>Optimal packet size</b> p with header h, k hops, x bits: total ≈ (x/p)·(p+h)/b + (k−1)(p+h)/b. Minimise → p = √( (k−1)·h·x · something )… in practice differentiate (x·(p+h)/(p·b)) + k·(p+h)/b w.r.t. p, set =0 ⇒ p = √(h·x/(k−1)) approximately.</li>
+<li><b>2 disjoint paths</b>: run Dijkstra, remove edges of path1, run again — Suurballe-like heuristic.</li>
+<li><b>Subnets ↔ hierarchical routing</b>: subnet prefix aggregates many hosts into one routing entry → same scaling trick at any level.</li>
+<li><b>Standards pros</b>: interop, competition, lower cost. <b>Cons</b>: slow to evolve, lowest-common-denominator, lock-in.</li>
+<li><b>Compression tradeoff</b>: comp+tx time = T<sub>c</sub> + F(1−r)/R. Equal to uncompressed F/R when R = F·r / T<sub>c</sub>. Propagation delay unchanged (depends on distance, not data).</li>
+</ul>
+</section>
+
+<section>
+<h2 class="slate">Quick Numbers</h2>
+<table>
+<tr><th>Ports</th><td>HTTP 80 · HTTPS 443 · DNS 53 · SMTP 25 · IMAP 143 · POP3 110 · FTP 21/20 · SSH 22 · DHCP 67/68 · BGP 179</td></tr>
+<tr><th>Sizes</th><td>UDP hdr 8B · TCP hdr 20B · IPv4 hdr 20B · IPv6 hdr 40B · MAC 48b · IPv4 32b · IPv6 128b · Eth payload 46–1500B</td></tr>
+<tr><th>Speeds</th><td>1 Mbps=10⁶ bps · prop ≈ 2·10⁸ m/s in fibre · 1 byte=8 bits</td></tr>
+<tr><th>Efficiency</th><td>ALOHA 1/(2e) · S-ALOHA 1/e · S&W ≪1 · TCP fair AIMD</td></tr>
+</table>
+</section>
+
+<section>
+<h2 class="orange">NAT Details & Traversal</h2>
+<ul>
+<li>NAT box keeps a translation table: (LAN IP, LAN port) ↔ (WAN IP, WAN port).</li>
+<li>Outgoing pkt: rewrite src to (WAN IP, new port), add entry. Incoming reply: reverse lookup.</li>
+<li>Critiques: violates end-to-end principle, breaks P2P/incoming, port limits (2¹⁶ per WAN IP).</li>
+<li><b>Traversal</b>: relaying (TURN), reverse connection, hole-punching via rendez-vous server (STUN/ICE).</li>
+</ul>
+</section>
+
+<section>
+<h2 class="teal">Switching: Spanning Tree</h2>
+<ul>
+<li>Loops in switched LAN ⇒ broadcast storms. <b>STP 802.1D</b> builds loop-free tree.</li>
+<li>Elect root bridge (lowest BID). Each switch picks root port (lowest path cost). Other ports designated/blocked.</li>
+<li>BPDU frames carry root ID + cost.</li>
+<li><b>RSTP 802.1w</b> = fast reconvergence.</li>
+</ul>
+</section>
+
+<section>
+<h2 class="teal">MPLS & Data Centres</h2>
+<ul>
+<li><b>MPLS</b>: 32-bit shim header between L2/L3. Label-switched paths; routers (LSRs) forward on 20-bit label. Enables traffic engineering, VPN.</li>
+<li><b>Data centre</b>: hierarchical fat-tree topology (TOR → aggregate → core); ECMP load-balance; oversubscription at higher tiers.</li>
+<li>Containerised servers, virtual switches; east-west traffic dominates.</li>
+</ul>
+</section>
+
+<section>
+<h2 class="red">Multimedia & Streaming</h2>
+<ul>
+<li>UDP+RTP for real-time (VoIP, video conf). RTP carries timestamp + seq#.</li>
+<li><b>Jitter</b>: variation in pkt delay. Mitigated by playout buffer.</li>
+<li><b>FEC</b>: send redundant info to recover loss without retransmit.</li>
+<li><b>DASH</b>: HTTP-based adaptive streaming; client measures TCP throughput, fetches next chunk at best rate.</li>
+<li><b>CDN</b>: server selection via DNS — geographic, load, network distance.</li>
+</ul>
+</section>
+
+<section>
+<h2 class="red">Security Quick Facts</h2>
+<ul>
+<li><b>Symmetric</b>: AES (fast, shared key). <b>Asymmetric</b>: RSA, ECC (key exchange, sigs).</li>
+<li><b>Hash</b>: SHA-256 (integrity). MAC = hash with key (HMAC).</li>
+<li><b>Digital sig</b>: sign hash with private key; verify with public key.</li>
+<li><b>Cert</b>: CA signs (subject pubkey, identity). X.509.</li>
+<li>Attacks: sniffing, IP spoofing, DDoS (volumetric/protocol), DNS poisoning, BGP hijacking, MITM (blocked by TLS+cert pinning).</li>
+<li><b>Firewall</b>: filters by (IP, port, proto). Stateful firewall tracks connections. IDS = passive detection.</li>
+</ul>
+</section>
+
+<section>
+<h2 class="slate">Reasoning Patterns</h2>
+<ul>
+<li><b>Why packet over circuit?</b> Bursty users: probability that K of N are active simultaneously is binomial; for N≫K with low duty, prob &gt;K active is tiny ⇒ statistical mux works.</li>
+<li><b>Optimal packet size</b>: total delay D(p) = (k−1)(p+h)/b (pipeline fill) + (x/p)(p+h)/b. dD/dp=0 → p* = √( (k−1)·h·x ) form depends on derivation; key insight: small p ⇒ header overhead high, big p ⇒ pipeline fills slow.</li>
+<li><b>Two disjoint paths</b>: 1) Dijkstra → P1. 2) Remove P1 edges. 3) Dijkstra → P2. Survives any single link loss.</li>
+<li><b>Self-learning vs roaming</b>: when host moves to new port, first frame from new port refreshes table entry (port column updated), so reverse traffic now follows.</li>
+<li><b>Per-pkt ACK vs per-file ACK</b>: per-pkt = recovery is fast (only retransmit one) but high overhead; per-file = low overhead but single loss ⇒ retransmit entire file.</li>
+</ul>
+</section>
+
+</div>
+</body>
+</html>
